@@ -1,0 +1,150 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>1个测试窗口</title>
+    <style>
+        .tab {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            margin: 0px 4px;
+            cursor: pointer;
+        }
+
+        .tabd {
+            background-color: #555555;
+            border: none;
+            color: white;
+            padding: 8px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            margin: 0px 4px;
+            cursor: pointer;
+        }
+
+        .tabr {
+            background-color: #740A0A;
+            border: none;
+            color: white;
+            padding: 8px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            margin: 0px 4px;
+            cursor: pointer;
+        }
+
+        .tab:hover {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        .tabd:hover {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        .tabr:hover {
+            background-color: #008CBA;
+            color: white;
+        }
+    </style>
+    <script type="text/javascript">
+
+        window.onload = function () {
+            window.scrollTo(0, document.body.scrollHeight);
+        };
+
+        function onClickRefreshFrame(i) {
+            // document.getElementById("if" + i).src = document.getElementById("if" + i).src;
+            var url = document.getElementById("if" + i).name;
+            document.getElementById("if" + i).src = url;
+        }
+
+        function onClickShutdownClient(i) {
+            // document.getElementById("if" + i).srcdoc = `<h1>closed ${i}</h1>`;
+            document.getElementById("if" + i).src = 'https://www.w3schools.com/404.html';
+        }
+
+    </script>
+</head>
+
+<body style="margin:0;padding:0;">
+    <table height="60px">
+        <tr>
+            <td>
+                <button class="tab" onClick="onClickRefreshFrame(1)">刷新1</button>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <button class="tabr" onClick="onClickShutdownClient(1)">关闭1</button>
+            </td>
+        </tr>
+    </table>
+    <table border="1px" bordercolor="#a0c6e5" width="100%" height="100%" cellspacing="0" cellpadding="0"
+        style="margin:0;padding:0;border-collapse:collapse;">
+        <tr height>
+            <td><iframe id='if1' width="100%" height="100%" style="border:0;"></iframe></td>
+        </tr>
+    </table>
+</body>
+
+<script>
+    window.addEventListener('beforeunload', function (event) {
+        window.sessionStorage = null;
+    })
+
+    var values = window.location.search.substr(1).split('&');
+    let keys = {};
+    for (var i in values) {
+        var item = values[i];
+        var items = item.split('=');
+        window.sessionStorage[items[0]] = items[1];
+        keys[items[0]] = items[1];
+    }
+
+    keys['server'] = window.sessionStorage['server'] || 'http://192.168.1.101:3001';
+    keys['account'] = window.sessionStorage['account'] || '1';
+
+    let cip = window.sessionStorage['cip'] || "192.168.1.14:7456";
+
+    window.gameurl = function (index) {
+        let params = [];
+        let cloneKeys = JSON.parse(JSON.stringify(keys));
+        for (let i in cloneKeys) {
+            if (cloneKeys[i]) {
+                if (i == 'account') {
+                    params.push(i + "=" + (+cloneKeys[i] + +index));
+                } else {
+                    params.push(i + "=" + (cloneKeys[i]));
+                }
+            }
+        }
+        params = params.join("&");
+        let url = `http://${cip}/?${params}`;
+        return url;
+    }
+
+    let frames = [
+        window.frames['if1'],
+    ];
+
+    for (let i in frames) {
+        frames[i].src = gameurl(i);
+        frames[i].name = frames[i].src;
+    }
+</script>
+
+
+</html>
