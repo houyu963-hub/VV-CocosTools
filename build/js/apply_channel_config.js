@@ -12,10 +12,13 @@ const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 const tsContent = `
 // ⚠️ AUTO GENERATED — DO NOT EDIT
 export const ChannelConfig = {
+  description: "${config.description}",
   env: "${config.env}",
+  debug: "${config.debug}",
   platform: "${config.platform}",
   channel: "${config.channel}",
   serverUrl: "${config.serverUrl}",
+  public_http_address: "${config.public_http_address}",
 };
 `;
 
