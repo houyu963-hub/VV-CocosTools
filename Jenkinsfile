@@ -1,6 +1,27 @@
 pipeline {
     agent any
+    // 设置环境变量确保正确编码
+    environment {
+        // 编码相关环境变量
+        LANG = 'zh_CN.UTF-8'
+        LC_ALL = 'zh_CN.UTF-8'
+        JAVA_TOOL_OPTIONS = '-Dfile.encoding=UTF-8'
+        
+        // Windows 中文编码
+        CHCP_CMD = 'chcp 65001 >nul'  // UTF-8
+        CHCP_GBK = 'chcp 936 >nul'    // GBK (Windows中文默认)
+        
+        // Cocos Creator 安装路径（按你机器实际改）
+        CREATOR_PATH = 'CocosCreator.exe'
 
+        // 项目根目录
+        PROJECT_DIR = "${WORKSPACE}"
+
+        // 构建脚本
+        BUILD_SCRIPT = 'tools\\build.bat'
+    }
+
+    
     options {
         disableConcurrentBuilds()
     }
@@ -41,17 +62,6 @@ pipeline {
             defaultValue: true,
             description: '是否清理旧构建产物'
         )
-    }
-
-    environment {
-        // Cocos Creator 安装路径（按你机器实际改）
-        CREATOR_PATH = 'CocosCreator.exe'
-
-        // 项目根目录
-        PROJECT_DIR = "${WORKSPACE}"
-
-        // 构建脚本
-        BUILD_SCRIPT = 'tools\\build.bat'
     }
 
     stages {
