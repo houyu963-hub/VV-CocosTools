@@ -65,13 +65,27 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: params.GIT_REF]],
-                    userRemoteConfigs: [[url: 'https://github.com/houyu963-hub/VV-CocosGameClient.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/houyu963-hub/VV-CocosGameClient.git']],
+                    extensions: [
+                       // 启用子模块递归拉取
+                       [$class: 'SubmoduleOption',
+                        disableSubmodules: false,  // 启用子模块
+                        recursiveSubmodules: true, // 递归拉取子模块
+                        trackingSubmodules: false, // 不跟踪子模块的上游分支
+                        reference: '',             // 不使用参考仓库
+                        parentCredentials: true,   // 使用父仓库的凭据
+                        depth: 0,                  // 完整克隆
+                        shallow: false             // 非浅克隆
+                       ],
+                       // 清理工作区：先清理，再进行代码拉取
+                      [$class: 'CleanBeforeCheckout'], // 在拉取代码之前清理工作区
+                      [$class: 'CleanCheckout']        // 拉取代码时清理工作区
+                    ]
                 ])
             }
         }
@@ -82,11 +96,11 @@ pipeline {
                 cd /d %PROJECT_DIR%
 
                 call %BUILD_SCRIPT% ^
-                  --platform ${params.PLATFORM} ^
-                  --channel ${params.CHANNEL} ^
-                  --env ${params.ENV} ^
-                  --mode ${params.MODE} ^
-                  --creator "${env.CREATOR_PATH}" ^
+                  --platform ${params.PLATFORM} \n^
+                  --channel ${params.CHANNEL} \n^
+                  --env ${params.ENV} \n^
+                  --mode ${params.MODE} \n^
+                  --creator "${env.CREATOR_PATH}" \n^
                   ${params.CLEAN_BUILD ? "--clean" : ""}
                 """
             }
