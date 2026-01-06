@@ -4,9 +4,18 @@ setlocal enabledelayedexpansion
 REM ===============================
 REM 固定路径
 REM ===============================
-cd /d %~dp0
 
+echo Current directory before cd: %cd%
+echo Script location: %~dp0
+cd /d %~dp0\..
+echo Current directory after cd: %cd%
 set PROJECT_ROOT=%cd%
+echo PROJECT_ROOT: %PROJECT_ROOT%
+
+
+@REM cd /d %~dp0\..
+
+@REM set PROJECT_ROOT=%cd%
 
 REM ===============================
 REM 参数说明
