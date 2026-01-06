@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 REM ===============================
 REM 固定路径
 REM ===============================
-cd /d %~dp0.
+cd /d %~dp0
 
 set PROJECT_ROOT=%cd%
 
