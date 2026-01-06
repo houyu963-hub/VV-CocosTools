@@ -99,7 +99,7 @@ if not exist "%CREATOR%" (
   exit /b 1
 )
 
-"%CREATOR%" --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
+%CREATOR% --project %cd% --build platform=web-mobile
 
 set CODE=%ERRORLEVEL%
 
