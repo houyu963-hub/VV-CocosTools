@@ -4,10 +4,9 @@ setlocal enabledelayedexpansion
 REM ===============================
 REM 固定路径
 REM ===============================
-cd /d %~dp0\..\..
+cd /d %~dp0\..
 
 set PROJECT_ROOT=%cd%
-set CREATOR_EXE=CocosCreator.exe
 
 REM ===============================
 REM 参数说明
@@ -24,6 +23,8 @@ set PLATFORM=%1
 set CHANNEL=%2
 set ENV=%3
 set MODE=%4
+set CREATOR=%5
+set CLEAN=%6
 
 REM ===============================
 REM 环境名归一化
@@ -92,9 +93,11 @@ echo   Platform: %PLATFORM%
 echo   Channel : %CHANNEL%
 echo   Env     : %ENV%
 echo   MODE    : %MODE%
+echo   CREATOR : %CREATOR%
+echo   CLEAN   : %CLEAN%
 echo.
 
-"%CREATOR_EXE%" ^
+"%CREATOR%" ^
   --project "%PROJECT_ROOT%" ^
   --build "%BUILD_ARGS%;mode=%MODE%"
 
