@@ -99,7 +99,10 @@ if not exist "%CREATOR%" (
   exit /b 1
 )
 
-"%CREATOR%" --project "." --build "%BUILD_ARGS%;mode=%MODE%"
+echo %cd%
+echo %BUILD_ARGS%
+echo %MODE%
+"%CREATOR%" --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
 
 set CODE=%ERRORLEVEL%
 
