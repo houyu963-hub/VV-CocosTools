@@ -12,7 +12,7 @@ pipeline {
         CHCP_GBK = 'chcp 936 >nul'    // GBK (Windows中文默认)
         
         // Cocos Creator 安装路径（按你机器实际改）
-        CREATOR_PATH = 'CocosCreator.exe'
+        CREATOR_PATH = 'D:\\software\\CocosEditors\\Creator\\3.8.1\\CocosCreator.exe'
 
         // 项目根目录
         PROJECT_DIR = "${WORKSPACE}"
