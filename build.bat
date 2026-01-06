@@ -47,7 +47,7 @@ if not exist "%CHANNEL_CONFIG%" (
 REM ===============================
 REM 注入 ChannelConfig.ts
 REM ===============================
-echo ▶ Inject ChannelConfig.ts
+echo =========== Inject ChannelConfig.ts ===========
 copy /Y "%CHANNEL_CONFIG%" "%CHANNEL_TS%" >nul
 
 if errorlevel 1 (
@@ -81,17 +81,18 @@ REM ===============================
 REM 开始构建
 REM ===============================
 echo.
-echo ▶ Building:
+echo =========== Building ===========
 echo   Platform: %PLATFORM%
 echo   Channel : %CHANNEL%
 echo   Env     : %ENV%
 echo   MODE    : %MODE%
 echo   CREATOR : %CREATOR%
 echo   CLEAN   : %CLEAN%
+echo =========== Building ===========
 echo.
 
 "%CREATOR%" ^
-  --project "%PROJECT_ROOT%" ^
+  --project "." ^
   --build "%BUILD_ARGS%;mode=%MODE%"
 
 set CODE=%ERRORLEVEL%
