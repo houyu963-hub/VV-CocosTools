@@ -93,7 +93,6 @@ pipeline {
        stage('Build') {
             steps {
                 bat """
-                cd /d ${env.WORKSPACE}
                 call tools\\build.bat ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} "${env.CREATOR_PATH}" ${params.CLEAN_BUILD ? "clean" : ""}
                 """
             }

@@ -91,6 +91,12 @@ echo   CLEAN   : %CLEAN%
 echo =========== Building ===========
 echo.
 
+REM 检查 CREATOR 路径
+if not exist "%CREATOR%" (
+  echo ❌ Cocos Creator not found at: %CREATOR%
+  exit /b 1
+)
+
 "%CREATOR%" ^
   --project "." ^
   --build "%BUILD_ARGS%;mode=%MODE%"
