@@ -68,15 +68,15 @@ REM ===============================
 REM 选择构建参数
 REM ===============================
 if "%PLATFORM%"=="android" (
-  set BUILD_ARGS=platform=android;configPath=build-config\\android\\buildConfig_android.json
+  set BUILD_ARGS=platform=android;configPath=build-config\android\buildConfig_android.json
 )
 
 if "%PLATFORM%"=="web" (
-  set BUILD_ARGS=platform=web-mobile;configPath=build-config\\web\\buildConfig_web-mobile.json
+  set BUILD_ARGS=platform=web-mobile;configPath=build-config\web\buildConfig_web-mobile.json
 )
 
 if "%PLATFORM%"=="ios" (
-  set BUILD_ARGS=platform=ios;configPath=build-config\\ios\\buildConfig_ios.json
+  set BUILD_ARGS=platform=ios;configPath=build-config\ios\buildConfig_ios.json
 )
 
 REM ===============================
