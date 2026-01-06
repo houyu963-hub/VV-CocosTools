@@ -11,6 +11,8 @@ if "%1"=="" goto usage
 if "%2"=="" goto usage
 if "%3"=="" goto usage
 if "%4"=="" goto usage
+if "%5"=="" goto usage
+if "%6"=="" goto usage
 
 set PLATFORM=%1
 set CHANNEL=%2
@@ -70,7 +72,7 @@ if "%PLATFORM%"=="android" (
 )
 
 if "%PLATFORM%"=="web" (
-  set BUILD_ARGS=platform=web-mobile;configPath=build-config/web/buildConfig_web.json
+  set BUILD_ARGS=platform=web-mobile;configPath=build-config/web/buildConfig_web-mobile.json
 )
 
 if "%PLATFORM%"=="ios" (
@@ -97,9 +99,7 @@ if not exist "%CREATOR%" (
   exit /b 1
 )
 
-"%CREATOR%" ^
-  --project "." ^
-  --build "%BUILD_ARGS%;mode=%MODE%"
+"%CREATOR%" --project "." --build "%BUILD_ARGS%;mode=%MODE%"
 
 set CODE=%ERRORLEVEL%
 
