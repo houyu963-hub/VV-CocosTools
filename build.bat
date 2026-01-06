@@ -2,22 +2,6 @@
 setlocal enabledelayedexpansion
 
 REM ===============================
-REM 固定路径
-REM ===============================
-
-echo Current directory before cd: %cd%
-echo Script location: %~dp0
-cd /d %~dp0\..
-echo Current directory after cd: %cd%
-set PROJECT_ROOT=%cd%
-echo PROJECT_ROOT: %PROJECT_ROOT%
-
-
-@REM cd /d %~dp0\..
-
-@REM set PROJECT_ROOT=%cd%
-
-REM ===============================
 REM 参数说明
 REM build.bat android xiaomi dev
 REM build.bat web official prod
@@ -51,8 +35,8 @@ if "%ENV%"=="dev"  set CONFIG_NAME=dev.json
 if "%ENV%"=="test" set CONFIG_NAME=test.json
 if "%ENV%"=="prod" set CONFIG_NAME=prod.json
 
-set CHANNEL_CONFIG=%PROJECT_ROOT%\channel-config\%PLATFORM%\%CHANNEL%\%CONFIG_NAME%
-set CHANNEL_TS=%PROJECT_ROOT%\assets\frame\scripts\config\ChannelConfig.ts
+set CHANNEL_CONFIG=channel-config\%PLATFORM%\%CHANNEL%\%CONFIG_NAME%
+set CHANNEL_TS=assets\frame\scripts\config\ChannelConfig.ts
 
 if not exist "%CHANNEL_CONFIG%" (
   echo ❌ Channel config not found:
@@ -82,15 +66,15 @@ REM ===============================
 REM 选择构建参数
 REM ===============================
 if "%PLATFORM%"=="android" (
-  set BUILD_ARGS=platform=android;configPath=%PROJECT_ROOT%build-config/android/buildConfig_android.json
+  set BUILD_ARGS=platform=android;configPath=build-config/android/buildConfig_android.json
 )
 
 if "%PLATFORM%"=="web" (
-  set BUILD_ARGS=platform=web-mobile;configPath=%PROJECT_ROOT%build-config/web/buildConfig_web.json
+  set BUILD_ARGS=platform=web-mobile;configPath=build-config/web/buildConfig_web.json
 )
 
 if "%PLATFORM%"=="ios" (
-  set BUILD_ARGS=platform=ios;configPath=%PROJECT_ROOT%build-config/ios/buildConfig_ios.json
+  set BUILD_ARGS=platform=ios;configPath=build-config/ios/buildConfig_ios.json
 )
 
 REM ===============================
