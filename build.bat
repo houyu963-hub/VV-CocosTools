@@ -35,7 +35,7 @@ if "%ENV%"=="dev"  set CONFIG_NAME=dev.json
 if "%ENV%"=="test" set CONFIG_NAME=test.json
 if "%ENV%"=="prod" set CONFIG_NAME=prod.json
 
-set CHANNEL_CONFIG=channel-config\%PLATFORM%\%CHANNEL%\%CONFIG_NAME%
+set CHANNEL_CONFIG=build-config\%PLATFORM%\%CHANNEL%\%CONFIG_NAME%
 set CHANNEL_TS=assets\frame\scripts\config\ChannelConfig.ts
 
 if not exist "%CHANNEL_CONFIG%" (
