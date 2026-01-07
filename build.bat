@@ -50,7 +50,7 @@ REM ===============================
 REM 注入 ChannelConfig.ts
 REM ===============================
 echo =========== Inject ChannelConfig.ts ===========
-node gen_channel_config.js %CHANNEL_JSON% %CHANNEL_TS%
+node tools\gen_channel_config.js %CHANNEL_JSON% %CHANNEL_TS%
 
 if errorlevel 1 (
   echo ❌ Failed to inject ChannelConfig.ts
