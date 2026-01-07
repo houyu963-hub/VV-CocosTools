@@ -27,9 +27,9 @@ set subgames_remote_url=https://cdn.g2qdh.com/hot-update/subgames/%name%/
 
 REM 生成 manifest
 if "%name%"=="hall" (
-    node generator_manifest.js -v %version% -u %hall_remote_url% -s "%genPath%" -d "%genPath%" -n %name%
+    node gen_manifest.js -v %version% -u %hall_remote_url% -s "%genPath%" -d "%genPath%" -n %name%
 ) else (
-    node generator_manifest.js -v %version% -u %subgames_remote_url% -s "%genPath%" -d "%genPath%" -n %name%
+    node gen_manifest.js -v %version% -u %subgames_remote_url% -s "%genPath%" -d "%genPath%" -n %name%
 )
 if errorlevel 1 (
     echo Error: Failed to generate manifest

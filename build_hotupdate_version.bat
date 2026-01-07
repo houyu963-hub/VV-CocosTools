@@ -45,7 +45,7 @@ set saveManifestPath=%projectPath%/tools/manifest/%bundleName%/
 :: -u 指定服务器远程包的地址，这个地址需要和最初发布版本中 Manifest 文件的远程包地址一致，否则无法检测到更新，。
 :: -s 本地原生打包版本的目录相对路径, 比如 ./build/android/assets。
 :: -d 保存 Manifest 文件的相对路径。
-node generator_manifest.js -v %version% -u %hotupdateUrl%/%bundleName%/ -s "%assetsRootPath%" -d "%assetsRootPath%" -n %bundleName%
+node gen_manifest.js -v %version% -u %hotupdateUrl%/%bundleName%/ -s "%assetsRootPath%" -d "%assetsRootPath%" -n %bundleName%
 
 if errorlevel 1 (
     echo Error: Failed to generate manifest
