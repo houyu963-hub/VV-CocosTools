@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent  {
+        label 'cocos-windows-agent'  // 指定需要 GUI 支持的 Windows 节点
+    }
     // 设置环境变量确保正确编码
     environment {
         // 编码相关环境变量
@@ -20,7 +22,6 @@ pipeline {
         // 构建脚本
         BUILD_SCRIPT = 'tools\\build.bat'
     }
-
     
     options {
         disableConcurrentBuilds()
