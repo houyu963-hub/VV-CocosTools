@@ -59,6 +59,20 @@ if errorlevel 1 (
 )
 
 REM ===============================
+REM 安装项目依赖
+REM ===============================
+if exist "package.json" (
+  echo =========== Installing dependencies ===========
+  npm install --registry https://registry.npmmirror.com
+  if errorlevel 1 (
+    echo ❌ Failed to install dependencies
+    exit /b 1
+  )
+) else (
+  echo package.json not found, skipping npm install
+)
+
+REM ===============================
 REM 设置热更新地址（独立处理）
 REM ===============================
 @REM if exist "hotupdate\set_hotupdate.bat" (
