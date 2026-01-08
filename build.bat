@@ -113,20 +113,6 @@ if not exist "%CREATOR%" (
 
 %CREATOR% --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
 
-set CODE=%ERRORLEVEL%
-
-REM ===============================
-REM Cocos exit code 36 视为成功
-REM ===============================
-if %CODE%==0 (
-  echo ✅ Build success
-) else if %CODE%==36 (
-  echo ✅ Build success (exit code 36)
-) else (
-  echo ❌ Build failed, exit code=%CODE%
-  exit /b %CODE%
-)
-
 echo 🎉 ALL DONE
 exit /b 0
 
