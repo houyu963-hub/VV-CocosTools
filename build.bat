@@ -63,9 +63,8 @@ REM 安装项目依赖
 REM ===============================
 if exist "package.json" (
   echo =========== Installing dependencies ===========
-  npm install --registry https://registry.npmmirror.com
-  REM 不检查 npm install 的返回值，因为 npm 可能返回非 0 值但实际成功
-  echo npm install completed
+  call npm install --registry https://registry.npmmirror.com
+  echo npm install completed with errorlevel: %ERRORLEVEL%
 ) else (
   echo package.json not found, skipping npm install
 )
