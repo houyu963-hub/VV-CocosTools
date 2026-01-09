@@ -92,17 +92,17 @@ if "%PLATFORM%"=="ios" (
 )
 
 REM ===============================
-REM 开始构建
+REM 开始构建 Android 工程
 REM ===============================
 echo.
-echo =========== Building ===========
+echo =========== Cocoscreator Building ===========
 echo   Platform: %PLATFORM%
 echo   Channel : %CHANNEL%
 echo   Env     : %ENV%
 echo   MODE    : %MODE%
 echo   CREATOR : %CREATOR%
 echo   CLEAN   : %CLEAN%
-echo =========== Building ===========
+echo =========== Cocoscreator Building ===========
 echo.
 
 REM 检查 CREATOR 路径

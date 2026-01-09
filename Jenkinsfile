@@ -30,7 +30,7 @@ pipeline {
     parameters {
         choice(
             name: 'PLATFORM',
-            choices: ['web', 'android'],
+            choices: ['web', 'android', 'ios'],
             description: '构建平台'
         )
 
@@ -66,7 +66,7 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('拉代码') {
             steps {
                 checkout([
                     $class: 'GitSCM',
@@ -91,7 +91,7 @@ pipeline {
             }
         }
 
-       stage('Build') {
+       stage("构建${params.PLATFORM}工程") {
             steps {
                 bat """
                 call ${env.BUILD_SCRIPT} ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} ${env.CREATOR_PATH} ${params.CLEAN_BUILD ? "clean" : ""}
@@ -99,16 +99,95 @@ pipeline {
             }
         }
 
-        stage('Archive Artifacts') {
+        stage('生成apk') {
+            when {
+                expression { params.PLATFORM == 'android' }
+            }
+            steps {
+                dir('build/android') {
+                    bat """
+                    gradlew assemble${params.CHANNEL.capitalize()}${params.MODE.capitalize()}
+                    """
+                }
+            }
+        }
+
+        stage('归档') {
             steps {
                 archiveArtifacts artifacts: 'build/**', fingerprint: true
+            }
+        }
+
+        stage('更新下载列表') {
+            steps {
+                script {
+                    def manifestFile = "${env.WORKSPACE}/JenkinsManifest.json"
+
+                    def platform = params.PLATFORM
+                    def channel  = params.CHANNEL
+                    def envName  = params.ENV
+
+                    def version  = env.BUILD_VERSION ?: "unknown"
+                    def commit   = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    def author   = env.BUILD_USER ?: "jenkins"
+                    def time     = sh(script: "date '+%Y-%m-%d %H:%M:%S'", returnStdout: true).trim()
+                    def duration = currentBuild.durationString.replace(" and counting", "")
+
+                    // Android / Web 差异
+                    def artifact = [:]
+                    if (platform == 'android') {
+                        artifact = [
+                            version: version,
+                            time: time,
+                            author: author,
+                            apk: "android/${channel}/${envName}/app.apk",
+                            apkSize: "unknown",
+                            androidVersion: version,
+                            hotupdateVersion: "unknown",
+                            commit: commit,
+                            duration: duration
+                        ]
+                    } else if (platform == 'web') {
+                        artifact = [
+                            version: version,
+                            time: time,
+                            author: author,
+                            url: "web/${envName}/index.html",
+                            commit: commit,
+                            duration: duration
+                        ]
+                    }
+
+                    // 如果 manifest.json 不存在，初始化
+                    if (!fileExists(manifestFile)) {
+                        writeFile file: manifestFile, text: "{}"
+                    }
+
+                    def manifest = readJSON file: manifestFile
+
+                    // 逐层确保存在
+                    manifest[platform] = manifest.get(platform, [:])
+                    manifest[platform][channel] = manifest[platform][channel] ?: [:]
+                    manifest[platform][channel][envName] = manifest[platform][channel][envName] ?: []
+
+                    // 插到最前面（最新的在前）
+                    manifest[platform][channel][envName].add(0, artifact)
+
+                    // 只保留最近 10 个
+                    manifest[platform][channel][envName] =
+                        manifest[platform][channel][envName].take(10)
+
+                    writeJSON file: manifestFile, json: manifest, pretty: 2
+
+                    echo "✅ JenkinsManifest.json updated"
+                }
             }
         }
     }
 
     post {
         success {
-            echo "✅ 构建成功：${params.PLATFORM} / ${params.CHANNEL} / ${params.ENV}"
+            echo "✅ 构建成功：${params.PLATFORM} / ${params.CHANNEL} / ${params.ENV} / ${params.MODE} / ${params.ENV}"
         }
         failure {
             echo "❌ 构建失败，请查看日志"
