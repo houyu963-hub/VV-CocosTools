@@ -121,7 +121,7 @@ pipeline {
         stage('更新下载列表') {
             steps {
                 script {
-                    def manifestFile = "${env.WORKSPACE}/JenkinsManifest.json"
+                    def manifestFile = "${env.WORKSPACE}/tools/JenkinsManifest.json"
 
                     def platform = params.PLATFORM
                     def channel  = params.CHANNEL
