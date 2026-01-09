@@ -1,3 +1,43 @@
+def resolveAndroidVersion(params, workspace) {
+    def manifestFile = "${workspace}/tools/JenkinsManifest.json"
+
+    def lastVersionName = "1.0.0"
+    def lastVersionCode = 10000
+
+    if (fileExists(manifestFile)) {
+        def m = readJSON file: manifestFile
+        def list = m?.android?."${params.CHANNEL}"?."${params.ENV}"
+        if (list && list.size() > 0) {
+            lastVersionName = list[0].versionName
+            lastVersionCode = list[0].versionCode as int
+        }
+    }
+
+    def versionName = params.VERSION_NAME?.trim()
+        ? params.VERSION_NAME
+        : lastVersionName
+
+    def versionCode = params.VERSION_CODE?.trim()
+        ? params.VERSION_CODE.toInteger()
+        : lastVersionCode
+
+    return [versionName, versionCode]
+}
+
+def resolveApkSize(String apkPath) {
+    if (!fileExists(apkPath)) {
+        error "APK not found: ${apkPath}"
+    }
+
+    def file = new File(apkPath)
+    long bytes = file.length()
+
+    return [
+        bytes : bytes,
+        mb    : String.format("%.2f", bytes / 1024.0 / 1024.0)
+    ]
+}
+
 pipeline {
     agent  {
         label 'cocos-windows-agent'  // 指定需要 GUI 支持的 Windows 节点
@@ -13,7 +53,7 @@ pipeline {
         CHCP_CMD = 'chcp 65001 >nul'  // UTF-8
         CHCP_GBK = 'chcp 936 >nul'    // GBK (Windows中文默认)
         
-        // Cocos Creator 安装路径（按你机器实际改）
+        // Cocos Creator 安装路径(按你机器实际改)
         CREATOR_PATH = 'D:\\software\\CocosEditors\\Creator\\3.8.1\\CocosCreator.exe'
 
         // 项目根目录
@@ -34,11 +74,21 @@ pipeline {
             description: '构建平台'
         )
 
-        choice(
-            name: 'CHANNEL',
-            choices: ['official', 'xiaomi', 'huawei'],
-            description: '渠道（web 可选 official）'
-        )
+         script {
+            if (params.PLATFORM == 'web') {
+                choice(
+                    name: 'CHANNEL',
+                    choices: ['official'],
+                    description: '渠道'
+                )
+            } else {
+                choice(
+                    name: 'CHANNEL',
+                    choices: ['official', 'xiaomi', 'huawei'],
+                    description: '渠道'
+                )
+            }
+        }   
 
         choice(
             name: 'ENV',
@@ -46,10 +96,22 @@ pipeline {
             description: '环境'
         )
 
+        string(
+            name: 'VERSION_NAME',
+            defaultValue: '',
+            description: 'Android versionName(如 1.3.2,留空自动使用上次)'
+        )
+
+        string(
+            name: 'VERSION_CODE',
+            defaultValue: '',
+            description: 'Android versionCode(如 10302,留空自动递增)'
+        )
+
         choice(
             name: 'MODE',
             choices: ['debug', 'release'],
-            description: '构建模式（debug / release）'
+            description: '构建模式(debug / release)'
         )
 
         string(
@@ -83,7 +145,7 @@ pipeline {
                         depth: 0,                  // 完整克隆
                         shallow: false             // 非浅克隆
                        ],
-                       // 清理工作区：先清理，再进行代码拉取
+                       // 清理工作区：先清理,再进行代码拉取
                       [$class: 'CleanBeforeCheckout'], // 在拉取代码之前清理工作区
                       [$class: 'CleanCheckout']        // 拉取代码时清理工作区
                     ]
@@ -105,9 +167,18 @@ pipeline {
             }
             steps {
                 dir('build/android') {
-                    bat """
-                    gradlew assemble${params.CHANNEL.capitalize()}${params.MODE.capitalize()}
-                    """
+                    script {
+                        def (versionName, versionCode) = resolveAndroidVersion(params, env.WORKSPACE)
+
+                        env.ANDROID_VERSION_NAME = versionName
+                        env.ANDROID_VERSION_CODE = versionCode.toString()
+
+                        echo "Android Version → name=${versionName}, code=${versionCode}"
+
+                        bat """
+                        gradlew assemble${params.CHANNEL.capitalize()}${params.MODE.capitalize()} -PversionName=${versionName} -PversionCode=${versionCode}
+                        """
+                    }
                 }
             }
         }
@@ -121,13 +192,18 @@ pipeline {
         stage('更新下载列表') {
             steps {
                 script {
+                    // 计算apk大小
+                    def apkPath = "${env.WORKSPACE}/build/android/${params.CHANNEL}/${params.ENV}/app-release.apk"
+                    def sizeInfo = resolveApkSize(apkPath)
+                    def APK_SIZE_MB    = sizeInfo.mb
+
+                    // 写入 manifest.json
                     def manifestFile = "${env.WORKSPACE}/tools/JenkinsManifest.json"
 
                     def platform = params.PLATFORM
                     def channel  = params.CHANNEL
                     def envName  = params.ENV
 
-                    def version  = env.BUILD_VERSION ?: "unknown"
                     def commit   = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     def author   = env.BUILD_USER ?: "jenkins"
                     def time     = sh(script: "date '+%Y-%m-%d %H:%M:%S'", returnStdout: true).trim()
@@ -137,19 +213,18 @@ pipeline {
                     def artifact = [:]
                     if (platform == 'android') {
                         artifact = [
-                            version: version,
+                            versionCode: env.ANDROID_VERSION_CODE as int,
+                            versionName: env.ANDROID_VERSION_NAME,
                             time: time,
                             author: author,
-                            apk: "android/${channel}/${envName}/app.apk",
-                            apkSize: "unknown",
-                            androidVersion: version,
+                            apk: "build/android/${channel}/${envName}/app.apk",
+                            apkSize: "${APK_SIZE_MB}MB",
                             hotupdateVersion: "unknown",
                             commit: commit,
                             duration: duration
                         ]
                     } else if (platform == 'web') {
                         artifact = [
-                            version: version,
                             time: time,
                             author: author,
                             url: "web/${envName}/index.html",
@@ -158,7 +233,7 @@ pipeline {
                         ]
                     }
 
-                    // 如果 manifest.json 不存在，初始化
+                    // 如果 manifest.json 不存在,初始化
                     if (!fileExists(manifestFile)) {
                         writeFile file: manifestFile, text: "{}"
                     }
@@ -170,7 +245,7 @@ pipeline {
                     manifest[platform][channel] = manifest[platform][channel] ?: [:]
                     manifest[platform][channel][envName] = manifest[platform][channel][envName] ?: []
 
-                    // 插到最前面（最新的在前）
+                    // 插到最前面(最新的在前)
                     manifest[platform][channel][envName].add(0, artifact)
 
                     // 只保留最近 10 个
@@ -190,7 +265,7 @@ pipeline {
             echo "✅ 构建成功：${params.PLATFORM} / ${params.CHANNEL} / ${params.ENV} / ${params.MODE} / ${params.ENV}"
         }
         failure {
-            echo "❌ 构建失败，请查看日志"
+            echo "❌ 构建失败,请查看日志"
         }
     }
 }

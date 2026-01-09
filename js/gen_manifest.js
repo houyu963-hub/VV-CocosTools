@@ -13,7 +13,7 @@ var manifest = {
 
 var dest = './remote-assets/';
 var src = './jsb/';
-var name = '';
+var inBundle = [];
 
 // Parse arguments
 var i = 2;
@@ -44,9 +44,9 @@ while (i < process.argv.length) {
             dest = process.argv[i + 1];
             i += 2;
             break;
-        case '-name':
-        case '-n':
-            name = process.argv[i + 1];
+        case '-inBundle':
+        case '-i':
+            inBundle = process.argv[i + 1];
             i += 2;
             break;
         default:
@@ -102,34 +102,11 @@ var mkdirSync = function (path) {
     }
 }
 
-// Iterate assets and src folder
-console.log('脚本执行name:' + name);
+// Iterate assets
 var dataDir = path.join(dest, "..")
-if (name === 'hall') {
-    console.log('脚本执行大厅');
-
-    readDir(path.join(dataDir, 'src'), manifest.assets);
-    readDir(path.join(dataDir, 'jsb-adapter'), manifest.assets);
-
-    /** 在执行底包 manifest 生成时 !!只需要!! 放入 cocos 内置 bundle*/
-
-    // cocos内置bundle
-    readDir(path.join(dataDir, 'assets/internal'), manifest.assets);
-    readDir(path.join(dataDir, 'assets/resources'), manifest.assets);
-    readDir(path.join(dataDir, 'assets/main'), manifest.assets);
-
-    /** 在执行底包 manifest 生成时 --不需要-- 放入 自定义 bundle*/
-    /** 在执行底包 manifest 生成时 --请注释-- 下面代码 */
-
-    // 自定义bundle
-    readDir(path.join(dataDir, 'assets/common'), manifest.assets);
-    readDir(path.join(dataDir, 'assets/loading'), manifest.assets);
-    readDir(path.join(dataDir, 'assets/hall'), manifest.assets);
-    readDir(path.join(dataDir, 'assets/mahjong'), manifest.assets);
-} else {
-    console.log('脚本执行 子游戏');
-    readDir(path.join(dataDir, 'assets/' + name), manifest.assets);
-}
+inBundle.forEach(function (item) {
+    readDir(path.join(dataDir, item), manifest.assets);
+});
 
 var destManifest = path.join(dest, 'project.manifest');
 var destVersion = path.join(dest, 'version.manifest');

@@ -1,10 +1,5 @@
 @echo off
 
-:: ===========================需要修改的地方===========================
-:: rar执行程序路径
-set rarPath=D:/software/WinRAR/Rar.exe
-:: ======================================================
-
 :: 检查参数是否存在
 if "%1"=="" (
     echo Error: Missing argument 'bundleName'
@@ -18,6 +13,10 @@ if "%3"=="" (
     echo Error: Missing argument 'hotupdateUrl'
     exit /b 1
 )
+if "%4"=="" (
+    echo Error: Missing argument 'minipackage'
+    exit /b 1
+)
 
 :: bundle name
 set bundleName=%1 
@@ -25,6 +24,8 @@ set bundleName=%1
 set version=%2
 :: 热更新地址
 set hotupdateUrl=%3
+:: minipackage
+set minipackage=%4
 
 echo bundleName:%bundleName%
 echo version:%version%
@@ -40,12 +41,39 @@ set assetsRootPath=%projectPath%/build/android/data/assets/
 set saveVersionPath=%projectPath%/tools/version/%bundleName%/
 set saveManifestPath=%projectPath%/tools/manifest/%bundleName%/
 
+:: 哪些bundle需要放进manifest中
+if "%bundleName%"=="hall" (
+    if "%minipackage%"=="true" (
+        set inBundlePathToManifest=[
+            "src",
+            "jsb-adapter",
+            "assets/internal",
+            "assets/resources",
+            "assets/main",
+        ]
+    ) else (
+            "src",
+            "jsb-adapter",
+            "assets/internal",
+            "assets/resources",
+            "assets/main",
+            "assets/common",
+            "assets/loading",
+            "assets/hall",
+            "assets/mahjong",
+        )
+) else (
+    set inBundlePathToManifest=[
+      %bundleName%
+    ]
+)
+
 :: 生成 manifest
 :: -v 指定 Manifest 文件的主版本号。
 :: -u 指定服务器远程包的地址，这个地址需要和最初发布版本中 Manifest 文件的远程包地址一致，否则无法检测到更新，。
 :: -s 本地原生打包版本的目录相对路径, 比如 ./build/android/assets。
 :: -d 保存 Manifest 文件的相对路径。
-node gen_manifest.js -v %version% -u %hotupdateUrl%/%bundleName%/ -s "%assetsRootPath%" -d "%assetsRootPath%" -n %bundleName%
+node js/gen_manifest.js -v %version% -u %hotupdateUrl%/%bundleName%/ -s "%assetsRootPath%" -d "%assetsRootPath%" -i "%inBundlePathToManifest%"
 
 if errorlevel 1 (
     echo Error: Failed to generate manifest
@@ -65,6 +93,7 @@ if "%bundleName%"=="hall" (
     %rarPath% a -ed version_%version%.zip ^
     :: src 目录引擎相关代码、插件脚本、配置管理脚本 settings.js 等
     "src" ^
+    "jsb-adapter" ^
 
     :: 生成的manifest文件
     "*.manifest" ^
@@ -89,8 +118,19 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: 移动生成的.zip文件到保存目录
+:: 创建保存目录
 if not exist "%saveVersionPath%" mkdir "%saveVersionPath%"
+
+:: 移动inBundlePathToManifest的资源到保存目录
+for %%i in %inBundlePathToManifest% do (
+    if exist "%assetsRootPath%%%i" (
+        echo move %%i to %saveVersionPath%
+        move "%src%%%i" "%saveVersionPath%"
+    )
+)
+
+:: 
+
 move "version_%version%.zip" "%saveVersionPath%"
 
 :: 移动生成的.manifest文件到保存目录

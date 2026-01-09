@@ -20,6 +20,7 @@ set ENV=%3
 set MODE=%4
 set CREATOR=%5
 set CLEAN=%6
+set MINI=%7
 
 REM ===============================
 REM 环境名归一化
@@ -51,7 +52,7 @@ REM 注入 ChannelConfig.ts
 REM ===============================
 echo =========== Inject ChannelConfig.ts ===========
 echo %CHANNEL_CONFIG%
-node tools\gen_channel_config.js %CHANNEL_CONFIG% %CHANNEL_TS%
+node tools\js\gen_channel_config.js %CHANNEL_CONFIG% %CHANNEL_TS%
 
 if errorlevel 1 (
   echo ❌ Failed to inject ChannelConfig.ts
@@ -70,11 +71,34 @@ if exist "package.json" (
 )
 
 REM ===============================
-REM 设置热更新地址（独立处理）
+REM 读取上一次热更新版本
 REM ===============================
-@REM if exist "hotupdate\set_hotupdate.bat" (
-@REM   call hotupdate\set_hotupdate.bat %PLATFORM% %CHANNEL% %ENV%
-@REM )
+set LAST_VERSION=
+for /f %%i in ('node tools\js\read_version.js tools\version\hall\version.manifest') do (
+  set LAST_VERSION=%%i
+)
+
+if "%LAST_VERSION%"=="" (
+  echo ❌ Failed to read last version
+  exit /b 1
+)
+
+echo Last hotupdate version: %LAST_VERSION%
+
+
+REM ===============================
+REM 每次构建生成apk都要是最新的资源不要再走热更新了，热更新版本号应该是上次生成的版本，
+REM 注意:这里似乎需要cocoscreator构建两次，
+REM 第一次用于生成最新资源manifest文件放进项目resources/manifest/hall/project.manifest、version.manifest，gen_hotupdate.bat会自动放。
+REM 所以当第一次构建后需要执行gen_hotupdate.bat，之后进行第二次构建
+REM 第二次使用最新的project.manifest、version.manifest文件构建android工程，
+REM gen_hotupdate.bat会把生成的.manifest文件放在/tools/version/%name%/下面，
+REM ===============================
+if exist "tools\gen_hotupdate.bat" (
+  set version=应该从上次生成的版本.manifest文件中读取获取远程资源的.manifest文件中读取
+  set hotupdateUrl=应该从CHANNEL_CONFIG中读取或是从注入后的ChannelConfig.ts中读取
+  call tools\gen_hotupdate.bat "hall" version %hotupdateUrl% %MINI%
+)
 
 REM ===============================
 REM 选择构建参数

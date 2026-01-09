@@ -90,9 +90,9 @@
             align-items: center;
         }
 
-        .item-info {
+        /* .item-info {
             line-height: 1.4;
-        }
+        } */
 
         .item-extra {
             display: none;
@@ -221,9 +221,6 @@
 
         el.innerHTML = `
     <div class="item-main">
-      <div class="item-info">
-        v${item.version}<br/>${item.time}
-      </div>
       <div>
         ${isWeb
                 ? `<a class="btn btn-run" href="${item.url}" target="_blank">运行</a>`
@@ -234,12 +231,13 @@
     </div>
 
     <div class="item-extra">
-      作者：${item.author}<br/>
-      ${item.androidVersion ? `Android版本：${item.androidVersion}<br/>` : ''}
-      ${item.hotupdateVersion ? `热更新：${item.hotupdateVersion}<br/>` : ''}
-      Git：${item.commit}<br/>
-      ${item.apkSize ? `包大小：${item.apkSize}<br/>` : ''}
-      构建耗时：${item.duration}
+      作者:${item.author}<br/>
+      ${item.versionCode ? `版本号:${item.versionCode}<br/>` : ''}
+      ${item.versionName ? `版本名:${item.versionName}<br/>` : ''}
+      ${item.hotupdateVersion ? `热更新版本:${item.hotupdateVersion}<br/>` : ''}
+      Git:${item.commit}<br/>
+      包大小:${item.apkSize}<br/>
+      构建耗时:${item.duration}
     </div>
   `;
 
