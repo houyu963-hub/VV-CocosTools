@@ -91,7 +91,7 @@ pipeline {
             }
         }
 
-       stage('构建') {
+        stage('构建') {
             steps {
                 bat """
                 call ${env.BUILD_SCRIPT} ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} ${env.CREATOR_PATH} ${params.CLEAN_BUILD ? "clean" : ""}
