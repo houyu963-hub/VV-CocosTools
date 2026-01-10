@@ -13,8 +13,7 @@ var manifest = {
 
 var dest = './remote-assets/';
 var src = './jsb/';
-var inBundle = [];
-
+var resourceFolder = '';
 // Parse arguments
 var i = 2;
 while (i < process.argv.length) {
@@ -44,9 +43,9 @@ while (i < process.argv.length) {
             dest = process.argv[i + 1];
             i += 2;
             break;
-        case '-inBundle':
+        case '-resourceFolder':
         case '-i':
-            inBundle = process.argv[i + 1];
+            resourceFolder = process.argv[i + 1];
             i += 2;
             break;
         default:
@@ -54,7 +53,6 @@ while (i < process.argv.length) {
             break;
     }
 }
-
 
 function readDir(dir, obj) {
     try {
@@ -104,7 +102,8 @@ var mkdirSync = function (path) {
 
 // Iterate assets
 var dataDir = path.join(dest, "..")
-inBundle.forEach(function (item) {
+let resourceArr = resourceFolder.split(',');
+resourceArr.forEach(function (item) {
     readDir(path.join(dataDir, item), manifest.assets);
 });
 

@@ -1,10 +1,11 @@
 @echo off
+chcp 65001
 setlocal enabledelayedexpansion
 
 REM ===============================
 REM 参数说明
-REM build.bat android xiaomi dev
-REM build.bat web official prod
+REM build.bat android xiaomi dev debug CocosCreator.exe true true
+REM build.bat web official test debug CocosCreator.exe true true
 REM ===============================
 
 if "%1"=="" goto usage
@@ -13,6 +14,7 @@ if "%3"=="" goto usage
 if "%4"=="" goto usage
 if "%5"=="" goto usage
 if "%6"=="" goto usage
+if "%7"=="" goto usage
 
 set PLATFORM=%1
 set CHANNEL=%2
@@ -42,22 +44,19 @@ set CHANNEL_CONFIG=build-config\%PLATFORM%\%CHANNEL%\%CONFIG_NAME%
 set CHANNEL_TS=assets\frame\config\ChannelConfig.ts
 
 if not exist "%CHANNEL_CONFIG%" (
-  echo ❌ Channel config not found:
-  echo %CHANNEL_CONFIG%
+  echo ❌ 错误: 未发现渠道配置:%CHANNEL_CONFIG%
   exit /b 1
 )
 
 REM ===============================
 REM 注入 ChannelConfig.ts
 REM ===============================
-echo =========== Inject ChannelConfig.ts ===========
-echo %CHANNEL_CONFIG%
 node tools\js\gen_channel_config.js %CHANNEL_CONFIG% %CHANNEL_TS%
-
 if errorlevel 1 (
-  echo ❌ Failed to inject ChannelConfig.ts
+  echo ❌ 错误: 注入 ChannelConfig.ts 失败
   exit /b 1
 )
+echo ===========  注入 ChannelConfig.ts 完成: %CHANNEL_CONFIG% ===========
 
 REM ===============================
 REM 安装项目依赖
@@ -65,39 +64,12 @@ REM ===============================
 if exist "package.json" (
   echo =========== Installing dependencies ===========
   call npm install --registry https://registry.npmmirror.com
-  echo npm install completed with errorlevel: %ERRORLEVEL%
+  if errorlevel 1 (
+    echo ❌ 错误: npm 安装失败 errorlevel: %ERRORLEVEL%
+    exit /b 1
+  )
 ) else (
-  echo package.json not found, skipping npm install
-)
-
-REM ===============================
-REM 读取上一次热更新版本
-REM ===============================
-set LAST_VERSION=
-for /f %%i in ('node tools\js\read_version.js tools\version\hall\version.manifest') do (
-  set LAST_VERSION=%%i
-)
-
-if "%LAST_VERSION%"=="" (
-  echo ❌ Failed to read last version
-  exit /b 1
-)
-
-echo Last hotupdate version: %LAST_VERSION%
-
-
-REM ===============================
-REM 每次构建生成apk都要是最新的资源不要再走热更新了，热更新版本号应该是上次生成的版本，
-REM 注意:这里似乎需要cocoscreator构建两次，
-REM 第一次用于生成最新资源manifest文件放进项目resources/manifest/hall/project.manifest、version.manifest，gen_hotupdate.bat会自动放。
-REM 所以当第一次构建后需要执行gen_hotupdate.bat，之后进行第二次构建
-REM 第二次使用最新的project.manifest、version.manifest文件构建android工程，
-REM gen_hotupdate.bat会把生成的.manifest文件放在/tools/version/%name%/下面，
-REM ===============================
-if exist "tools\gen_hotupdate.bat" (
-  set version=应该从上次生成的版本.manifest文件中读取获取远程资源的.manifest文件中读取
-  set hotupdateUrl=应该从CHANNEL_CONFIG中读取或是从注入后的ChannelConfig.ts中读取
-  call tools\gen_hotupdate.bat "hall" version %hotupdateUrl% %MINI%
+  echo 未发现package.json, 跳过 npm install
 )
 
 REM ===============================
@@ -116,37 +88,82 @@ if "%PLATFORM%"=="ios" (
 )
 
 REM ===============================
-REM 开始构建 Android 工程
+REM 热更新流程（必须双构建）
 REM ===============================
+
+REM 1. 第一次构建（生成最新资源）
+%CREATOR% --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
+if errorlevel 36 (
+  echo ✅ 第1次构建完成: code 36
+) else (
+    echo ❌ 错误: 第1次构建失败
+    exit /b 1
+)
+
+REM 2. 读取上一次版本号
+set LAST_VERSION_PATH=tools\hoteupdateversion\hall\version.manifest
+set LAST_VERSION=
+if exist LAST_VERSION_PATH (
+  for /f %%i in ('node tools\js\read_value.js tools\hoteupdateversion\hall\version.manifest version') do (
+    set LAST_VERSION=%%i
+  )
+) else (
+  echo 未发现上一次版本文件默认版本: 0.0.0.0
+  set LAST_VERSION=0.0.0.0
+)
+
+if "%LAST_VERSION%"=="" (
+  echo ❌ 错误: 读取上一次版本号失败
+  exit /b 1
+)
+
+REM 3. 读取热更新地址
+set HOTUPDATE_URL=
+for /f %%i in ('node tools\js\read_value.js %CHANNEL_CONFIG% hotupdateUrl') do (
+  set HOTUPDATE_URL=%%i
+)
+
+if "%HOTUPDATE_URL%"=="" (
+  echo ❌ 错误: 读取热更新地址失败
+  exit /b 1
+)
+
+REM 4. 生成热更新 manifest
+call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %MINI%
+if errorlevel 1 (
+  echo ❌ 错误: 生成热更新 manifest 失败
+  exit /b 1
+)
+
+REM 5. 第二次构建（正式 APK）
 echo.
-echo =========== Cocoscreator Building ===========
+echo =========== 第二次构建 ===========
 echo   Platform: %PLATFORM%
 echo   Channel : %CHANNEL%
 echo   Env     : %ENV%
 echo   MODE    : %MODE%
 echo   CREATOR : %CREATOR%
-echo   CLEAN   : %CLEAN%
-echo =========== Cocoscreator Building ===========
+echo =========== 第二次构建 ===========
 echo.
 
-REM 检查 CREATOR 路径
-if not exist "%CREATOR%" (
-  echo ❌ Cocos Creator not found at: %CREATOR%
-  exit /b 1
+%CREATOR% --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
+if errorlevel 36 (
+  echo ✅ 第2次构建完成: code 36
+) else (
+    echo ❌ 错误: 第2次构建失败
+    exit /b 1
 )
 
-%CREATOR% --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
-
-echo 🎉 ALL DONE
+echo 🎉 构建任务全部完成
 exit /b 0
 
 :usage
 echo.
 echo 用法:
-echo   build.bat ^<platform^> ^<channel^> ^<env^>
+echo   build.bat ^<platform^> ^<channel^> ^<env^> ^<mode^> ^<creator^> ^<clean^> ^<mini^>
 echo.
 echo 示例:
-echo   build.bat android xiaomi dev
-echo   build.bat android huawei prod
-echo   build.bat web official test
+echo   build.bat android xiaomi dev debug CocosCreator.exe true true
+echo   build.bat android huawei prod debug CocosCreator.exe true true
+echo   build.bat web official test debug CocosCreator.exe true true
 exit /b 1

@@ -1,140 +1,122 @@
 @echo off
+chcp 65001
 
-:: 检查参数是否存在
-if "%1"=="" (
-    echo Error: Missing argument 'bundleName'
-    exit /b 1
-)
-if "%2"=="" (
-    echo Error: Missing argument 'version'
-    exit /b 1
-)
-if "%3"=="" (
-    echo Error: Missing argument 'hotupdateUrl'
-    exit /b 1
-)
-if "%4"=="" (
-    echo Error: Missing argument 'minipackage'
-    exit /b 1
-)
+:: ===============================
+:: 参数说明
+:: ===============================
+
+if "%1"=="" goto usage
+if "%2"=="" goto usage
+if "%3"=="" goto usage
+if "%4"=="" goto usage
 
 :: bundle name
-set bundleName=%1 
+set bundleName=%1
 :: 版本号
 set version=%2
 :: 热更新地址
 set hotupdateUrl=%3
-:: minipackage
+:: 是否使用minipackage 使用的话就只会放入引擎相关的资源 包体小
 set minipackage=%4
 
-echo bundleName:%bundleName%
-echo version:%version%
-echo hotupdateUrl:%hotupdateUrl%
+:: ===============================
+:: 热更新参数
+:: ===============================
+echo.
+echo =========== Hotupdate Building ===========
+echo   bundleName  :%bundleName%
+echo   version     :%version%
+echo   hotupdateUrl:%hotupdateUrl%
+echo   minipackage :%minipackage%
+echo =========== Hotupdate Building ===========
+echo.
 
 :: 项目路径
-set projectPath=../
+set projectPath=%cd%
 
 :: 资源根目录
-set assetsRootPath=%projectPath%/build/android/data/assets/
+set assetsRootPath=%projectPath%\build\android\data\assets\
 
-:: 保存版本号和manifest的目录
-set saveVersionPath=%projectPath%/tools/version/%bundleName%/
-set saveManifestPath=%projectPath%/tools/manifest/%bundleName%/
+:: 产物保存目录
+set saveVersionPath=%projectPath%\tools\hoteupdateversion\%bundleName%\
 
 :: 哪些bundle需要放进manifest中
 if "%bundleName%"=="hall" (
     if "%minipackage%"=="true" (
-        set inBundlePathToManifest=[
-            "src",
-            "jsb-adapter",
-            "assets/internal",
-            "assets/resources",
-            "assets/main",
-        ]
+        set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main"
     ) else (
-            "src",
-            "jsb-adapter",
-            "assets/internal",
-            "assets/resources",
-            "assets/main",
-            "assets/common",
-            "assets/loading",
-            "assets/hall",
-            "assets/mahjong",
-        )
+        set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main","assets\common","assets\loading","assets\hall","assets\mahjong"
+    )
 ) else (
-    set inBundlePathToManifest=[
-      %bundleName%
-    ]
-)
-
-:: 生成 manifest
-:: -v 指定 Manifest 文件的主版本号。
-:: -u 指定服务器远程包的地址，这个地址需要和最初发布版本中 Manifest 文件的远程包地址一致，否则无法检测到更新，。
-:: -s 本地原生打包版本的目录相对路径, 比如 ./build/android/assets。
-:: -d 保存 Manifest 文件的相对路径。
-node js/gen_manifest.js -v %version% -u %hotupdateUrl%/%bundleName%/ -s "%assetsRootPath%" -d "%assetsRootPath%" -i "%inBundlePathToManifest%"
-
-if errorlevel 1 (
-    echo Error: Failed to generate manifest
-    exit /b 1
-)
-echo generate %bundleName% manifest succeed!
-
-set src=%assetsRootPath%%bundleName%/
-:: 压缩资源
-if "%bundleName%"=="hall" (
-    :: 把 manifest 文件移动到data目录也就是资源根目录的上级目录
-    cd %assetsRootPath%
-    move *.manifest ..
-    :: 进入data目录
-    cd ..
-    :: 压缩资源
-    %rarPath% a -ed version_%version%.zip ^
-    :: src 目录引擎相关代码、插件脚本、配置管理脚本 settings.js 等
-    "src" ^
-    "jsb-adapter" ^
-
-    :: 生成的manifest文件
-    "*.manifest" ^
-
-    :: 引擎内部bundle
-    "assets/internal" ^
-    "assets/resources" ^
-    "assets/main" ^
-
-    :: 自定义bundle
-    "assets/common" ^
-    "assets/loading" ^
-    "assets/hall" ^
-    "assets/mahjong"
-) else (
-    :: 子游戏直接压缩
-    cd %src%
-    %rarPath% a -r version_%version%.zip *
+    set resourceFolder=["%bundleName%"]
 )
 if errorlevel 1 (
-    echo Error: Compression failed
+    echo ❌ 错误: 选择资源失败
     exit /b 1
 )
+set UPDATE_URL=%hotupdateUrl%\%bundleName%\
+set ASSETSROOT_PATH=%assetsRootPath%
+set RESOURCE_FOLDER=%resourceFolder%
 
-:: 创建保存目录
-if not exist "%saveVersionPath%" mkdir "%saveVersionPath%"
+:: 将路径中的反斜杠替换为正斜杠
+set "UPDATE_URL=%UPDATE_URL:\=/%"
+set "ASSETSROOT_PATH=%ASSETSROOT_PATH:\=/%"
+set "RESOURCE_FOLDER=%RESOURCE_FOLDER:\=/%"
+
+node tools/js/gen_manifest.js ^
+  -v "%version%" ^
+  -u "%UPDATE_URL%" ^
+  -s "%ASSETSROOT_PATH%" ^
+  -d "%ASSETSROOT_PATH%" ^
+  -i "%RESOURCE_FOLDER%"
+
+if errorlevel 1 (
+    exit /b 1
+)
+echo 生成 %bundleName% manifest 完成
+
+set src=%assetsRootPath%%bundleName%\
+
+:: 删除旧文件
+if exist "%saveVersionPath%" (
+    :: 先尝试删除其中的文件 防止被占用的情况
+    attrib -R "%saveVersionPath%"*.* /S
+    rmdir /s /q "%saveVersionPath%"
+) 
+mkdir "%saveVersionPath%"
+
+set dataPath=%assetsRootPath%..
 
 :: 移动inBundlePathToManifest的资源到保存目录
-for %%i in %inBundlePathToManifest% do (
-    if exist "%assetsRootPath%%%i" (
-        echo move %%i to %saveVersionPath%
-        move "%src%%%i" "%saveVersionPath%"
+setlocal enabledelayedexpansion
+for %%i in (%resourceFolder%) do (
+    set "item=%%i"
+    set "item=!item:"=!"
+    if exist "%dataPath%\!item!" (
+        echo 移动 !item! 到 "%saveVersionPath%"
+        move "%dataPath%\!item!" "%saveVersionPath%" >nul
     )
 )
-
-:: 
-
-move "version_%version%.zip" "%saveVersionPath%"
-
+endlocal
+if errorlevel 1 (
+    echo ❌ 错误: 移动产物文件到保存目录失败1
+    exit /b 1
+)
 :: 移动生成的.manifest文件到保存目录
-if not exist "%saveManifestPath%" mkdir "%saveManifestPath%"
-move "*.manifest" "%saveManifestPath%"
+move "%assetsRootPath%*.manifest" "%saveVersionPath%"
+if errorlevel 1 (
+    echo ❌ 错误: 移动产物文件到保存目录失败
+    exit /b 1
+)
+echo 生成%bundleName%热更新文件完成
 
-echo generate %bundleName% version_%version%.zip succeed!
+exit /b 0
+
+:usage
+echo.
+echo 用法:
+echo   gen_hotupdate.bat ^<bundleName^> ^<version^> ^<hotupdateUrl^> ^<minipackage^>
+echo.
+echo 示例:
+echo   build.bat hall 0.0.1 dev https://test.cdn.xxx.com/xiaomi true
+exit /b 1
