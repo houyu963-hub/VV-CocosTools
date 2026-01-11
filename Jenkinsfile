@@ -200,11 +200,6 @@ pipeline {
         stage('更新下载列表') {
             steps {
                 script {
-                    // 计算apk大小
-                    def apkPath = "${env.WORKSPACE}/build/android/${params.CHANNEL}/${params.ENV}/app-release.apk"
-                    def sizeInfo = resolveApkSize(apkPath)
-                    def APK_SIZE_MB    = sizeInfo.mb
-
                     // 写入 manifest.json
                     def manifestFile = "${env.WORKSPACE}/tools/JenkinsManifest.json"
 
@@ -220,6 +215,11 @@ pipeline {
                     // Android / Web 差异
                     def artifact = [:]
                     if (platform == 'android') {
+                        // 计算apk大小
+                        def apkName = Game_${params.CHANNEL}_${params.ENV}_v${params.VERSION_CODE}.apk
+                        def apkPath = "${env.WORKSPACE}/build/android/${params.CHANNEL}/${params.ENV}/${apkName}"
+                        def sizeInfo = resolveApkSize(apkPath)
+                        def APK_SIZE_MB    = sizeInfo.mb
                         artifact = [
                             versionCode: env.ANDROID_VERSION_CODE as int,
                             versionName: env.ANDROID_VERSION_NAME,
