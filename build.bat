@@ -94,7 +94,12 @@ REM ===============================
 REM 1. 第一次构建（生成最新资源）
 %CREATOR% --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
 if errorlevel 36 (
-  echo ✅ 第1次构建完成: code 36
+  if "%PLATFORM%"=="web" (
+      echo 🎉 构建任务全部完成
+      exit /b 0
+  ) else ( 
+    echo ✅ 第1次构建完成: code 36
+  )
 ) else (
     echo ❌ 错误: 第1次构建失败
     exit /b 1
@@ -108,7 +113,7 @@ if exist LAST_VERSION_PATH (
     set LAST_VERSION=%%i
   )
 ) else (
-  echo 未发现上一次版本文件默认版本: 0.0.0.0
+  echo 未发现version.manifest,默认热更新版本: 0.0.0.0
   set LAST_VERSION=0.0.0.0
 )
 
