@@ -38,6 +38,25 @@ def resolveApkSize(String apkPath) {
     ]
 }
 
+def cleanupOldArtifacts(String baseDir, int keepCount) {
+    if (!fileExists(baseDir)) {
+        return
+    }
+
+    def dirs = bat(
+        script: """
+        powershell -NoProfile -Command ^
+        "Get-ChildItem '${baseDir}' -Directory |
+         Sort-Object Name -Descending |
+         Select-Object -Skip ${keepCount} |
+         ForEach-Object { Remove-Item $_.FullName -Recurse -Force }"
+        """,
+        returnStdout: true
+    )
+
+    echo "🧹 清理 ${baseDir} 下多余历史产物（保留 ${keepCount} 个）"
+}
+
 pipeline {
     agent  {
         label 'cocos-windows-agent'  // 指定需要 GUI 支持的 Windows 节点
@@ -191,9 +210,60 @@ pipeline {
             }
         }
 
-        stage('存档') {
+        stage('整理构建产物') {
             steps {
-                archiveArtifacts artifacts: 'build/**', fingerprint: true
+                script {
+                    def platform = params.PLATFORM
+                    def channel  = params.CHANNEL
+                    def envName  = params.ENV
+
+                    // 时间戳目录
+                    def timeDir = new Date().format("yyyyMMdd_HHmmss")
+
+                    def publishRoot = "${env.WORKSPACE}/publish/${platform}/${channel}/${envName}"
+                    def targetDir   = "${publishRoot}/${timeDir}"
+
+                    bat """
+                    mkdir "${targetDir}" 2>nul
+                    """
+
+                    if (platform == 'android') {
+                        def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
+                        def apkSrc  = "build/android/${channel}/${envName}/${apkName}"
+
+                        bat """
+                        copy /Y "${apkSrc}" "${targetDir}\\${apkName}"
+                        """
+                    }
+
+                    if (platform == 'web') {
+                        bat """
+                        xcopy /E /I /Y "build/web-mobile" "${targetDir}"
+                        """
+                    }
+
+                    echo "✅ 构建产物已保存到 ${targetDir}"
+
+                    // ===== 只保留最近 10 个 =====
+                    cleanupOldArtifacts(publishRoot, 10)
+                }
+            }
+        }
+
+       stage('存档') {
+            steps {
+                script {
+                    if (params.PLATFORM == 'android') {
+                        // 只归档 APK 文件
+                        archiveArtifacts artifacts: "build/android/${params.CHANNEL}/${params.ENV}/**/*.apk", fingerprint: true
+                    } else if (params.PLATFORM == 'web') {
+                        // 只归档 web 构建产物
+                        archiveArtifacts artifacts: 'build/web/**/*', fingerprint: true
+                    } else if (params.PLATFORM == 'ios') {
+                        // 归档 iOS 相关产物
+                        archiveArtifacts artifacts: 'build/ios/**/*', fingerprint: true
+                    }
+                }
             }
         }
 
@@ -211,12 +281,8 @@ pipeline {
                         returnStdout: true
                     ).trim().split('\r\n')[-1]
 
-                    def time = bat(
-                        script: 'powershell -NoProfile -Command "Get-Date -Format \\"yyyy-MM-dd HH:mm:ss\\""',
-                        returnStdout: true
-                    ).trim().split('\r\n')[-1]
-
-                    def author   = (env.BUILD_USER ?: "jenkins").toString()
+                    def time = new Date().format("yyyy-MM-dd HH:mm:ss")
+                    def author = env.BUILD_USER?.toString() ?: "jenkins"
                     def duration = currentBuild.durationString.replace(" and counting", "").toString()
 
                     // ===== hotupdate version =====
@@ -228,10 +294,14 @@ pipeline {
                         hotupdateVersion = versionManifest?.version?.toString() ?: "0.0.0.0"
                     }
 
+                    def PUBLISH_ROOT = "publish"
+                    def apkRelativePath = "${PUBLISH_ROOT}/android/${channel}/${envName}/${apkName}"
+                    def webRelativePath = "${PUBLISH_ROOT}/web/${channel}/${envName}/index.html"
+
                     def artifact = [:]
 
                     if (platform == 'android') {
-                        def apkName = "Game_${channel}_${envName}_v${params.VERSION_CODE}.apk"
+                        def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
                         def apkPath = "${env.WORKSPACE}/build/android/${channel}/${envName}/${apkName}"
 
                         def sizeInfo = resolveApkSize(apkPath)
@@ -242,7 +312,7 @@ pipeline {
                             versionName      : env.ANDROID_VERSION_NAME.toString(),
                             time             : time,
                             author           : author,
-                            apk              : ("build/android/" + channel + "/" + envName + "/" + apkName),
+                            apk              : apkRelativePath,
                             apkSize          : (APK_SIZE_MB + "MB"),
                             hotupdateVersion : hotupdateVersion,
                             commit           : commit,
@@ -254,7 +324,7 @@ pipeline {
                         artifact = [
                             time     : time,
                             author   : author,
-                            url      : ("web/" + envName + "/index.html"),
+                            url      : webRelativePath,
                             commit   : commit,
                             duration : duration
                         ]
@@ -274,7 +344,7 @@ pipeline {
 
                     // 插到最前面(最新的在前)
                     manifest[platform][channel][envName].add(0, artifact)
-                    
+
                     // 只保留最近 10 个
                     manifest[platform][channel][envName] =
                         manifest[platform][channel][envName].take(10)
