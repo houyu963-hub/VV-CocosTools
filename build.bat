@@ -22,7 +22,7 @@ set ENV=%3
 set MODE=%4
 set CREATOR=%5
 set CLEAN=%6
-set MINI=%7
+set MINI_APK=%7
 
 REM ===============================
 REM 环境名归一化
@@ -129,7 +129,7 @@ if "%HOTUPDATE_URL%"=="" (
 )
 
 REM 4. 生成热更新 manifest
-call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %MINI%
+call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %MINI_APK%
 if errorlevel 1 (
   echo ❌ 错误: 生成热更新 manifest 失败
   exit /b 1
@@ -160,7 +160,7 @@ exit /b 0
 :usage
 echo.
 echo 用法:
-echo   build.bat ^<platform^> ^<channel^> ^<env^> ^<mode^> ^<creator^> ^<clean^> ^<mini^>
+echo   build.bat ^<platform^> ^<channel^> ^<env^> ^<mode^> ^<creator^> ^<clean^> ^<mini_apk^>
 echo.
 echo 示例:
 echo   build.bat android xiaomi dev debug CocosCreator.exe true true

@@ -74,21 +74,11 @@ pipeline {
             description: '构建平台'
         )
 
-         script {
-            if (params.PLATFORM == 'web') {
-                choice(
-                    name: 'CHANNEL',
-                    choices: ['official'],
-                    description: '渠道'
-                )
-            } else {
-                choice(
-                    name: 'CHANNEL',
-                    choices: ['official', 'xiaomi', 'huawei'],
-                    description: '渠道'
-                )
-            }
-        }   
+        choice(
+            name: 'CHANNEL',
+            choices: ['official', 'xiaomi', 'huawei'],
+            description: '渠道'
+        )
 
         choice(
             name: 'ENV',
@@ -99,13 +89,13 @@ pipeline {
         string(
             name: 'VERSION_NAME',
             defaultValue: '',
-            description: 'Android versionName(如 1.3.2,留空自动使用上次)'
+            description: 'Android 版本名称(如 1.3.2,留空自动使用上次)'
         )
 
         string(
             name: 'VERSION_CODE',
             defaultValue: '',
-            description: 'Android versionCode(如 10302,留空自动递增)'
+            description: 'Android 版本号(如 10302,留空自动使用上次)'
         )
 
         choice(
@@ -128,6 +118,18 @@ pipeline {
     }
 
     stages {
+        stage('参数验证') {
+            steps {
+                script {
+                    if (params.PLATFORM == 'web') {
+                        if (params.CHANNEL != 'official') {
+                            error "Web平台只支持official渠道"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('拉代码') {
             steps {
                 checkout([
@@ -156,7 +158,7 @@ pipeline {
         stage('构建') {
             steps {
                 bat """
-                call ${env.BUILD_SCRIPT} ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} ${env.CREATOR_PATH} ${params.CLEAN_BUILD ? "clean" : ""}
+                call ${env.BUILD_SCRIPT} ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} ${env.CREATOR_PATH} ${params.CLEAN_BUILD ? "true" : ""} ${MINI_APK ? "true" : ""}
                 """
             }
         }
@@ -183,7 +185,7 @@ pipeline {
             }
         }
 
-        stage('归档') {
+        stage('存档') {
             steps {
                 archiveArtifacts artifacts: 'build/**', fingerprint: true
             }
@@ -254,7 +256,7 @@ pipeline {
 
                     writeJSON file: manifestFile, json: manifest, pretty: 2
 
-                    echo "✅ JenkinsManifest.json updated"
+                    echo "✅ JenkinsManifest.json 更新完成"
                 }
             }
         }

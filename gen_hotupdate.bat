@@ -16,8 +16,8 @@ set bundleName=%1
 set version=%2
 :: 热更新地址
 set hotupdateUrl=%3
-:: 是否使用minipackage 使用的话就只会放入引擎相关的资源 包体小
-set minipackage=%4
+:: 是否使用小包体 使用的话就只会放入引擎相关的资源
+set miniApk=%4
 
 :: ===============================
 :: 热更新参数
@@ -27,7 +27,7 @@ echo =========== Hotupdate Building ===========
 echo   bundleName  :%bundleName%
 echo   version     :%version%
 echo   hotupdateUrl:%hotupdateUrl%
-echo   minipackage :%minipackage%
+echo   miniApk :%miniApk%
 echo =========== Hotupdate Building ===========
 echo.
 
@@ -42,7 +42,7 @@ set saveVersionPath=%projectPath%\tools\hoteupdateversion\%bundleName%\
 
 :: 哪些bundle需要放进manifest中
 if "%bundleName%"=="hall" (
-    if "%minipackage%"=="true" (
+    if "%miniApk%"=="true" (
         set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main"
     ) else (
         set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main","assets\common","assets\loading","assets\hall","assets\mahjong"
@@ -115,7 +115,7 @@ exit /b 0
 :usage
 echo.
 echo 用法:
-echo   gen_hotupdate.bat ^<bundleName^> ^<version^> ^<hotupdateUrl^> ^<minipackage^>
+echo   gen_hotupdate.bat ^<bundleName^> ^<version^> ^<hotupdateUrl^> ^<miniApk^>
 echo.
 echo 示例:
 echo   build.bat hall 0.0.1 dev https://test.cdn.xxx.com/xiaomi true
