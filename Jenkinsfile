@@ -100,7 +100,7 @@ pipeline {
 
         choice(
             name: 'MODE',
-            choices: ['debug', 'release'],
+            choices: ['release', 'debug'],
             description: '构建模式(debug / release)'
         )
 
@@ -114,6 +114,12 @@ pipeline {
             name: 'CLEAN_BUILD',
             defaultValue: true,
             description: '是否清理旧构建产物'
+        )
+
+         booleanParam(
+            name: 'MINI_APK',
+            defaultValue: true,
+            description: '小包体'
         )
     }
 
