@@ -210,8 +210,8 @@ pipeline {
                         script: 'git rev-parse --short HEAD',
                         returnStdout: true
                         ).trim()
-                     def time = bat(
-                        script: "date '+%Y-%m-%d %H:%M:%S'",
+                   def time = bat(
+                        script: 'powershell -NoProfile -Command "Get-Date -Format \\"yyyy-MM-dd HH:mm:ss\\""',
                         returnStdout: true
                         ).trim()
                     def author   = env.BUILD_USER ?: "jenkins"
