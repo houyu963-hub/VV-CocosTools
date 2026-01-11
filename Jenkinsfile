@@ -206,10 +206,15 @@ pipeline {
                     def platform = params.PLATFORM
                     def channel  = params.CHANNEL
                     def envName  = params.ENV
-
-                    def commit   = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    def commit = bat(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                        ).trim()
+                     def time = bat(
+                        script: "date '+%Y-%m-%d %H:%M:%S'",
+                        returnStdout: true
+                        ).trim()
                     def author   = env.BUILD_USER ?: "jenkins"
-                    def time     = sh(script: "date '+%Y-%m-%d %H:%M:%S'", returnStdout: true).trim()
                     def duration = currentBuild.durationString.replace(" and counting", "")
 
                     // Android / Web 差异
