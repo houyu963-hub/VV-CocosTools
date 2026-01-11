@@ -200,49 +200,63 @@ pipeline {
         stage('更新下载列表') {
             steps {
                 script {
-                    // 写入 manifest.json
                     def manifestFile = "${env.WORKSPACE}/tools/JenkinsManifest.json"
 
-                    def platform = params.PLATFORM
-                    def channel  = params.CHANNEL
-                    def envName  = params.ENV
+                    def platform = params.PLATFORM.toString()
+                    def channel  = params.CHANNEL.toString()
+                    def envName  = params.ENV.toString()
+
                     def commit = bat(
                         script: 'git rev-parse --short HEAD',
                         returnStdout: true
-                        ).trim()
-                   def time = bat(
+                    ).trim().split('\r\n')[-1]
+
+                    def time = bat(
                         script: 'powershell -NoProfile -Command "Get-Date -Format \\"yyyy-MM-dd HH:mm:ss\\""',
                         returnStdout: true
-                        ).trim()
-                    def author   = env.BUILD_USER ?: "jenkins"
-                    def duration = currentBuild.durationString.replace(" and counting", "")
+                    ).trim().split('\r\n')[-1]
 
-                    // Android / Web 差异
+                    def author   = (env.BUILD_USER ?: "jenkins").toString()
+                    def duration = currentBuild.durationString.replace(" and counting", "").toString()
+
+                    // ===== hotupdate version =====
+                    def hotupdateVersion = "0.0.0.0"
+                    def versionManifestPath = "${env.WORKSPACE}/tools/hoteupdateversion/hall/version.manifest"
+
+                    if (fileExists(versionManifestPath)) {
+                        def versionManifest = readJSON file: versionManifestPath
+                        hotupdateVersion = versionManifest?.version?.toString() ?: "0.0.0.0"
+                    }
+
                     def artifact = [:]
+
                     if (platform == 'android') {
-                        // 计算apk大小
-                        def apkName = Game_${params.CHANNEL}_${params.ENV}_v${params.VERSION_CODE}.apk
-                        def apkPath = "${env.WORKSPACE}/build/android/${params.CHANNEL}/${params.ENV}/${apkName}"
+                        def apkName = "Game_${channel}_${envName}_v${params.VERSION_CODE}.apk"
+                        def apkPath = "${env.WORKSPACE}/build/android/${channel}/${envName}/${apkName}"
+
                         def sizeInfo = resolveApkSize(apkPath)
-                        def APK_SIZE_MB    = sizeInfo.mb
+                        def APK_SIZE_MB = sizeInfo.mb
+
                         artifact = [
-                            versionCode: env.ANDROID_VERSION_CODE as int,
-                            versionName: env.ANDROID_VERSION_NAME,
-                            time: time,
-                            author: author,
-                            apk: "build/android/${channel}/${envName}/app.apk",
-                            apkSize: "${APK_SIZE_MB}MB",
-                            hotupdateVersion: "unknown",
-                            commit: commit,
-                            duration: duration
+                            versionCode      : env.ANDROID_VERSION_CODE as int,
+                            versionName      : env.ANDROID_VERSION_NAME.toString(),
+                            time             : time,
+                            author           : author,
+                            apk              : ("build/android/" + channel + "/" + envName + "/" + apkName),
+                            apkSize          : (APK_SIZE_MB + "MB"),
+                            hotupdateVersion : hotupdateVersion,
+                            commit           : commit,
+                            duration         : duration
                         ]
-                    } else if (platform == 'web') {
+                    }
+
+                    if (platform == 'web') {
                         artifact = [
-                            time: time,
-                            author: author,
-                            url: "web/${envName}/index.html",
-                            commit: commit,
-                            duration: duration
+                            time     : time,
+                            author   : author,
+                            url      : ("web/" + envName + "/index.html"),
+                            commit   : commit,
+                            duration : duration
                         ]
                     }
 
@@ -260,7 +274,7 @@ pipeline {
 
                     // 插到最前面(最新的在前)
                     manifest[platform][channel][envName].add(0, artifact)
-
+                    
                     // 只保留最近 10 个
                     manifest[platform][channel][envName] =
                         manifest[platform][channel][envName].take(10)
@@ -271,6 +285,7 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
