@@ -15,6 +15,7 @@ if "%4"=="" goto usage
 if "%5"=="" goto usage
 if "%6"=="" goto usage
 if "%7"=="" goto usage
+if "%8"=="" goto usage
 
 set PLATFORM=%1
 set CHANNEL=%2
@@ -23,6 +24,7 @@ set MODE=%4
 set CREATOR=%5
 set CLEAN=%6
 set MINI_APK=%7
+set BUILD_TYPE=%8
 
 REM ===============================
 REM 环境名归一化
@@ -32,6 +34,12 @@ if "%ENV%"=="test" set ENV=test
 if "%ENV%"=="dev" set ENV=dev
 if "%MODE%"=="debug" set MODE=debug
 if "%MODE%"=="release" set MODE=release
+if "%CLEAN%"=="true" set CLEAN=true
+if "%CLEAN%"=="false" set CLEAN=false
+if "%MINI_APK%"=="true" set MINI_APK=true
+if "%MINI_APK%"=="false" set MINI_APK=false
+if "%BUILD_TYPE%"=="hotupdate" set BUILD_TYPE=hotupdate
+if "%BUILD_TYPE%"=="generateApk" set BUILD_TYPE=generateApk
 
 REM ===============================
 REM 渠道配置文件
@@ -95,8 +103,9 @@ REM 1. 第一次构建（生成最新资源）
 %CREATOR% --project %cd% --build "%BUILD_ARGS%;mode=%MODE%"
 if errorlevel 36 (
   if "%PLATFORM%"=="web" (
-      echo 🎉 构建任务全部完成
-      exit /b 0
+    @REM web 构建成功就结束 不需要后续流程
+    echo 🎉 构建任务全部完成
+    exit /b 0
   ) else ( 
     echo ✅ 第1次构建完成: code 36
   )
@@ -105,11 +114,11 @@ if errorlevel 36 (
     exit /b 1
 )
 
-REM 2. 读取上一次版本号
-set LAST_VERSION_PATH=tools\hoteupdateversion\hall\version.manifest
+REM 2. 读取线上最新的热更版本号
+set LAST_VERSION_PATH=..\hotupdate\hall\version.manifest
 set LAST_VERSION=
-if exist LAST_VERSION_PATH (
-  for /f %%i in ('node tools\js\read_value.js tools\hoteupdateversion\hall\version.manifest version') do (
+if exist %LAST_VERSION_PATH% (
+  for /f %%i in ('node tools\js\read_value.js ..\hotupdate\hall\version.manifest version') do (
     set LAST_VERSION=%%i
   )
 ) else (
@@ -118,7 +127,7 @@ if exist LAST_VERSION_PATH (
 )
 
 if "%LAST_VERSION%"=="" (
-  echo ❌ 错误: 读取上一次版本号失败
+  echo ❌ 错误: 读取线上最新热更版本号失败
   exit /b 1
 )
 
@@ -134,10 +143,23 @@ if "%HOTUPDATE_URL%"=="" (
 )
 
 REM 4. 生成热更新 manifest
-call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %MINI_APK%
+set SAVEA_ARTIFACTS_DIR = 
+if "%BUILD_TYPE%"=="hotupdate" (
+  set SAVEA_ARTIFACTS_DIR=..\hotupdate\%bundleName%\
+) else if "%BUILD_TYPE%"=="generateApk" (
+  set SAVEA_ARTIFACTS_DIR=.\assets\resources\manifest\hall\
+)
+call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %MINI_APK% %BUILD_TYPE% %SAVEA_ARTIFACTS_DIR%
+
 if errorlevel 1 (
   echo ❌ 错误: 生成热更新 manifest 失败
   exit /b 1
+)
+
+REM 只是热更新的文件 就不需要第二次构建
+if "%BUILD_TYPE%"=="hotupdate" (
+  echo ✅ 生成 %bundleName% 热更新文件完成
+  exit /b 0
 )
 
 REM 5. 第二次构建（正式 APK）
@@ -158,6 +180,14 @@ if errorlevel 36 (
     echo ❌ 错误: 第2次构建失败
     exit /b 1
 )
+
+echo ========== 注入代码到 main.js ==========
+node tools\js\gen_main.js
+if errorlevel 1 (
+    echo ❌ 错误: 注入 main.js 失败
+    exit /b 1
+)
+echo ✅ main.js 代码注入完成
 
 echo 🎉 构建任务全部完成
 exit /b 0

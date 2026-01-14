@@ -105,6 +105,12 @@ pipeline {
             description: '环境'
         )
 
+        BUILD_TYPE(
+            name: 'BUILD_TYPE',
+            choices: ['hotupdate', 'generateApk'],
+            description: '构建类型(生热更新文件 / 生成apk)'
+        )
+
         string(
             name: 'VERSION_NAME',
             defaultValue: '',
@@ -183,7 +189,7 @@ pipeline {
         stage('构建') {
             steps {
                 bat """
-                call ${env.BUILD_SCRIPT} ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} ${env.CREATOR_PATH} ${params.CLEAN_BUILD ? "true" : ""} ${MINI_APK ? "true" : ""}
+                call ${env.BUILD_SCRIPT} ${params.PLATFORM} ${params.CHANNEL} ${params.ENV} ${params.MODE} ${env.CREATOR_PATH} ${params.CLEAN_BUILD ? "true" : "false"} ${params.MINI_APK ? "true" : "false"} ${params.BUILD_TYPE}
                 """
             }
         }
@@ -210,59 +216,44 @@ pipeline {
             }
         }
 
-        stage('整理构建产物') {
+       stage('存档') {
             steps {
                 script {
                     def platform = params.PLATFORM
                     def channel  = params.CHANNEL
                     def envName  = params.ENV
-
+                    def mode  = params.MODE
+                    //========== jenkins 归档 ==========
+                    if (platform == 'android') {
+                        archiveArtifacts artifacts: "build/android/proj/build/*/*/outputs/apk/${channel}/${envName}/**/*.apk", fingerprint: true
+                    } else if (platform == 'web-mobile') {
+                        archiveArtifacts artifacts: 'build/web/**/*', fingerprint: true
+                    } else if (platform == 'ios') {
+                        archiveArtifacts artifacts: 'build/ios/**/*', fingerprint: true
+                    }
+                    //========== 保存到发布目录 ==========
                     // 时间戳目录
                     def timeDir = new Date().format("yyyyMMdd_HHmmss")
-
                     def publishRoot = "${env.WORKSPACE}/publish/${platform}/${channel}/${envName}"
                     def targetDir   = "${publishRoot}/${timeDir}"
-
                     bat """
                     mkdir "${targetDir}" 2>nul
                     """
-
                     if (platform == 'android') {
                         def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
-                        def apkSrc  = "build/android/${channel}/${envName}/${apkName}"
-
+                        def apkSrc  = "build/android/proj/build/*/*/outputs/apk/${channel}/${mode}/${apkName}"
                         bat """
                         copy /Y "${apkSrc}" "${targetDir}\\${apkName}"
                         """
                     }
-
                     if (platform == 'web') {
                         bat """
                         xcopy /E /I /Y "build/web-mobile" "${targetDir}"
                         """
                     }
-
                     echo "✅ 构建产物已保存到 ${targetDir}"
-
                     // ===== 只保留最近 10 个 =====
                     cleanupOldArtifacts(publishRoot, 10)
-                }
-            }
-        }
-
-       stage('存档') {
-            steps {
-                script {
-                    if (params.PLATFORM == 'android') {
-                        // 只归档 APK 文件
-                        archiveArtifacts artifacts: "build/android/${params.CHANNEL}/${params.ENV}/**/*.apk", fingerprint: true
-                    } else if (params.PLATFORM == 'web') {
-                        // 只归档 web 构建产物
-                        archiveArtifacts artifacts: 'build/web/**/*', fingerprint: true
-                    } else if (params.PLATFORM == 'ios') {
-                        // 归档 iOS 相关产物
-                        archiveArtifacts artifacts: 'build/ios/**/*', fingerprint: true
-                    }
                 }
             }
         }
@@ -286,12 +277,12 @@ pipeline {
                     def duration = currentBuild.durationString.replace(" and counting", "").toString()
 
                     // ===== hotupdate version =====
-                    def hotupdateVersion = "0.0.0.0"
-                    def versionManifestPath = "${env.WORKSPACE}/tools/hoteupdateversion/hall/version.manifest"
+                    def hotupdateVersion = ""
+                    def versionManifestPath = "${env.WORKSPACE}/assets/resources/manifest/hall/version.manifest"
 
                     if (fileExists(versionManifestPath)) {
                         def versionManifest = readJSON file: versionManifestPath
-                        hotupdateVersion = versionManifest?.version?.toString() ?: "0.0.0.0"
+                        hotupdateVersion = versionManifest?.version?.toString() ?: "x.x.x.x"
                     }
 
                     def PUBLISH_ROOT = "publish"

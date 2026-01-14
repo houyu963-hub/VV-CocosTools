@@ -1,6 +1,0 @@
-{
-    "packageUrl": "http://192.168.1.99:8081/hall/",
-    "remoteManifestUrl": "http://192.168.1.99:8081/hall/project.manifest",
-    "remoteVersionUrl": "http://192.168.1.99:8081/hall/version.manifest",
-    "version": "1.0.0.37"
-}
