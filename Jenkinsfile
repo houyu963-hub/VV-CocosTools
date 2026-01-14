@@ -120,25 +120,25 @@ pipeline {
         string(
             name: 'VERSION_NAME',
             defaultValue: '',
-            description: 'Android 版本名称(默认上次) web无效'
+            description: 'Android 版本名称(留空默认上次) web无效'
         )
 
         string(
             name: 'VERSION_CODE',
             defaultValue: '',
-            description: 'Android 版本号(默认上次) web无效'
+            description: 'Android 版本号(留空默认上次) web无效'
         )
 
         choice(
             name: 'MODE',
             choices: ['release', 'debug'],
-            description: '构建模式(debug / release) web无效'
+            description: 'Android 构建模式(debug / release) web无效'
         )
 
          booleanParam(
             name: 'MINI_APK',
             defaultValue: true,
-            description: '小包体'
+            description: '小包体 web无效'
         )
 
         booleanParam(
@@ -175,12 +175,12 @@ pipeline {
                         trackingSubmodules: false, // 不跟踪子模块的上游分支
                         reference: '',             // 不使用参考仓库
                         parentCredentials: true,   // 使用父仓库的凭据
-                        depth: 0,                  // 完整克隆
-                        shallow: false             // 非浅克隆
+                        depth: 1,                  // 只克隆最新提交
+                        shallow: true              // 浅克隆
                        ],
                        // 清理工作区：先清理,再进行代码拉取
                       [$class: 'CleanBeforeCheckout'], // 在拉取代码之前清理工作区
-                      [$class: 'CleanCheckout']        // 拉取代码时清理工作区
+                    //   [$class: 'CleanCheckout']        // 拉取代码时清理工作区
                     ]
                 ])
             }
@@ -234,7 +234,7 @@ pipeline {
                     //========== 保存到发布目录 ==========
                     // 时间戳目录
                     def timeDir = new Date().format("yyyyMMdd_HHmmss")
-                    def publishRoot = "..\\..\\${env.WORKSPACE}\\publish\\${platform}\\${channel}\\${envName}"
+                    def publishRoot = "${env.WORKSPACE}\\..\\..\\publish\\${platform}\\${channel}\\${envName}"
                     def targetDir   = "${publishRoot}\\${timeDir}"
                     bat """
                     mkdir "${targetDir}" 2>nul
