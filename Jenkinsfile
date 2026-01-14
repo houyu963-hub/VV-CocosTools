@@ -199,7 +199,7 @@ pipeline {
                 expression { params.PLATFORM == 'android' }
             }
             steps {
-                dir('build/android') {
+                dir('build\\android') {
                     script {
                         def (versionName, versionCode) = resolveAndroidVersion(params, env.WORKSPACE)
 
@@ -225,23 +225,23 @@ pipeline {
                     def mode  = params.MODE
                     //========== jenkins 归档 ==========
                     if (platform == 'android') {
-                        archiveArtifacts artifacts: "build/android/proj/build/*/*/outputs/apk/${channel}/${envName}/**/*.apk", fingerprint: true
+                        archiveArtifacts artifacts: "build\\android\\proj\\build\\*\\*\\outputs\\apk\\${channel}\\${envName}\\**\\*.apk", fingerprint: true
                     } else if (platform == 'web-mobile') {
-                        archiveArtifacts artifacts: 'build/web/**/*', fingerprint: true
+                        archiveArtifacts artifacts: 'build\\web\\**\\*', fingerprint: true
                     } else if (platform == 'ios') {
-                        archiveArtifacts artifacts: 'build/ios/**/*', fingerprint: true
+                        archiveArtifacts artifacts: 'build\\ios\\**\\*', fingerprint: true
                     }
                     //========== 保存到发布目录 ==========
                     // 时间戳目录
                     def timeDir = new Date().format("yyyyMMdd_HHmmss")
-                    def publishRoot = "${env.WORKSPACE}/publish/${platform}/${channel}/${envName}"
-                    def targetDir   = "${publishRoot}/${timeDir}"
+                    def publishRoot = "..\\..\\${env.WORKSPACE}\\publish\\${platform}\\${channel}\\${envName}"
+                    def targetDir   = "${publishRoot}\\${timeDir}"
                     bat """
                     mkdir "${targetDir}" 2>nul
                     """
                     if (platform == 'android') {
                         def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
-                        def apkSrc  = "build/android/proj/build/*/*/outputs/apk/${channel}/${mode}/${apkName}"
+                        def apkSrc  = "build\\android\\proj\\build\\*\\*\\outputs\\apk\\${channel}\\${mode}\\${apkName}"
                         bat """
                         copy /Y "${apkSrc}" "${targetDir}\\${apkName}"
                         """
@@ -261,7 +261,7 @@ pipeline {
         stage('更新下载列表') {
             steps {
                 script {
-                    def manifestFile = "${env.WORKSPACE}/tools/JenkinsManifest.json"
+                    def manifestFile = "${env.WORKSPACE}\\tools\\JenkinsManifest.json"
 
                     def platform = params.PLATFORM.toString()
                     def channel  = params.CHANNEL.toString()
@@ -278,7 +278,7 @@ pipeline {
 
                     // ===== hotupdate version =====
                     def hotupdateVersion = ""
-                    def versionManifestPath = "${env.WORKSPACE}/assets/resources/manifest/hall/version.manifest"
+                    def versionManifestPath = "${env.WORKSPACE}\\assets\\resources\\manifest\\hall\\version.manifest"
 
                     if (fileExists(versionManifestPath)) {
                         def versionManifest = readJSON file: versionManifestPath
@@ -286,14 +286,14 @@ pipeline {
                     }
 
                     def PUBLISH_ROOT = "publish"
-                    def apkRelativePath = "${PUBLISH_ROOT}/android/${channel}/${envName}/${apkName}"
-                    def webRelativePath = "${PUBLISH_ROOT}/web/${channel}/${envName}/index.html"
+                    def apkRelativePath = "${PUBLISH_ROOT}\\android\\${channel}\\${envName}\\${apkName}"
+                    def webRelativePath = "${PUBLISH_ROOT}\\web\\${channel}\\${envName}\\index.html"
 
                     def artifact = [:]
 
                     if (platform == 'android') {
                         def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
-                        def apkPath = "${env.WORKSPACE}/build/android/${channel}/${envName}/${apkName}"
+                        def apkPath = "${env.WORKSPACE}\\build\\android\\${channel}\\${envName}\\${apkName}"
 
                         def sizeInfo = resolveApkSize(apkPath)
                         def APK_SIZE_MB = sizeInfo.mb
