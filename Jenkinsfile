@@ -105,7 +105,7 @@ pipeline {
             description: '环境'
         )
 
-        BUILD_TYPE(
+        choice(
             name: 'BUILD_TYPE',
             choices: ['hotupdate', 'generateApk'],
             description: '构建类型(生热更新文件 / 生成apk)'
