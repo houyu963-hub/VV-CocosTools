@@ -87,6 +87,12 @@ pipeline {
     }
 
     parameters {
+        string(
+            name: 'GIT_REF',
+            defaultValue: 'main',
+            description: '分支名 / tag / commit hash'
+        )
+
         choice(
             name: 'PLATFORM',
             choices: ['web', 'android', 'ios'],
@@ -108,43 +114,37 @@ pipeline {
         choice(
             name: 'BUILD_TYPE',
             choices: ['hotupdate', 'generateApk'],
-            description: '构建类型(生热更新文件 / 生成apk)'
+            description: '构建类型(生热更新文件 / 生成apk) web无效'
         )
 
         string(
             name: 'VERSION_NAME',
             defaultValue: '',
-            description: 'Android 版本名称(如 1.3.2,留空自动使用上次)'
+            description: 'Android 版本名称(默认上次) web无效'
         )
 
         string(
             name: 'VERSION_CODE',
             defaultValue: '',
-            description: 'Android 版本号(如 10302,留空自动使用上次)'
+            description: 'Android 版本号(默认上次) web无效'
         )
 
         choice(
             name: 'MODE',
             choices: ['release', 'debug'],
-            description: '构建模式(debug / release)'
-        )
-
-        string(
-            name: 'GIT_REF',
-            defaultValue: 'main',
-            description: '分支名 / tag / commit hash'
-        )
-
-        booleanParam(
-            name: 'CLEAN_BUILD',
-            defaultValue: true,
-            description: '是否清理旧构建产物'
+            description: '构建模式(debug / release) web无效'
         )
 
          booleanParam(
             name: 'MINI_APK',
             defaultValue: true,
             description: '小包体'
+        )
+
+        booleanParam(
+            name: 'CLEAN_BUILD',
+            defaultValue: true,
+            description: '是否清理旧构建产物'
         )
     }
 
