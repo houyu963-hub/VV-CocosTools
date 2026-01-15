@@ -1,0 +1,36 @@
+@Library('jenkins-shared-cocos') _
+
+pipeline {
+  agent { label 'cocos-windows-agent' }
+
+  parameters {
+    choice(name: 'PLATFORM', choices: ['web','android'])
+    choice(name: 'CHANNEL', choices: ['official','xiaomi'])
+    choice(name: 'ENV', choices: ['dev','prod'])
+    choice(name: 'MODE', choices: ['release','debug'])
+  }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Build') {
+      steps {
+        bat "call tools\\build.bat ${params.PLATFORM} ${params.CHANNEL} ${params.ENV}"
+      }
+    }
+
+    stage('Android') {
+      when { expression { params.PLATFORM == 'android' } }
+      steps { androidBuild(this) }
+    }
+
+    stage('Publish') {
+      steps {
+        publishArtifacts(this)
+        updateManifest(this)
+      }
+    }
+  }
+}
