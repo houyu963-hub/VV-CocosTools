@@ -19,7 +19,7 @@ def resolveAndroidVersion(params, workspace) {
 
     def versionCode = params.VERSION_CODE?.trim()
         ? params.VERSION_CODE.toInteger()
-        : lastVersionCode
+        : lastVersionCode + 1
 
     return [versionName, versionCode]
 }
@@ -29,8 +29,10 @@ def resolveApkSize(String apkPath) {
         error "APK not found: ${apkPath}"
     }
 
-    def file = new File(apkPath)
-    long bytes = file.length()
+   def bytes = bat(
+        script: "powershell -NoProfile -Command \"(Get-Item '${apkPath}').Length\"",
+        returnStdout: true
+    ).trim().toLong()
 
     return [
         bytes : bytes,
@@ -265,7 +267,8 @@ pipeline {
         stage('更新下载列表') {
             steps {
                 script {
-                    def manifestFile = "${env.WORKSPACE}\\tools\\JenkinsManifest.json"
+                    def publishRoot = "${env.WORKSPACE}\\..\\..\\publish"
+                    def manifestFile = "${publishRoot}\\JenkinsManifest.json"
 
                     def platform = params.PLATFORM.toString()
                     def channel  = params.CHANNEL.toString()
@@ -289,12 +292,12 @@ pipeline {
                         hotupdateVersion = versionManifest?.version?.toString() ?: "x.x.x.x"
                     }
 
-                    def publishRoot = "${env.WORKSPACE}\\..\\..\\publish"
+                    
                     def artifact = [:]
 
                     if (platform == 'android') {
                         def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
-                        def apkRelativePath = "${publishRoot}\\${platform}\\${channel}\\${envName}\\${apkName}"
+                        def apkRelativePath = "${publishRoot}/${platform}/${channel}/${envName}/${apkName}"
 
                         def sizeInfo = resolveApkSize(apkRelativePath)
                         def APK_SIZE_MB = sizeInfo.mb

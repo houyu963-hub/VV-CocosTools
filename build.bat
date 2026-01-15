@@ -145,7 +145,8 @@ if "%HOTUPDATE_URL%"=="" (
 REM 4. 生成热更新 manifest
 set SAVEA_ARTIFACTS_DIR = 
 if "%BUILD_TYPE%"=="hotupdate" (
-  set SAVEA_ARTIFACTS_DIR=..\hotupdate\%bundleName%\
+  set PUBLISH_ROOT = \..\..\publish
+  set SAVEA_ARTIFACTS_DIR=PUBLISH_ROOT\hotupdate\%PLATFORM%\%CHANNEL%\%ENV%\%bundleName%\
 ) else if "%BUILD_TYPE%"=="generateApk" (
   set SAVEA_ARTIFACTS_DIR=.\assets\resources\manifest\hall\
 )
