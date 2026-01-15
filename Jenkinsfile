@@ -44,13 +44,17 @@ def cleanupOldArtifacts(String baseDir, int keepCount) {
     }
 
     def dirs = bat(
-        script: """
-        powershell -NoProfile -Command ^
-        "Get-ChildItem '${baseDir}' -Directory |
-         Sort-Object Name -Descending |
-         Select-Object -Skip ${keepCount} |
-         ForEach-Object { Remove-Item $_.FullName -Recurse -Force }"
-        """,
+        script:
+            'powershell -NoProfile -Command "& {' +
+            '  if (Test-Path \'' + baseDir + '\') {' +
+            '    $dirs = Get-ChildItem \'' + baseDir + '\' -Directory | ' +
+            '            Sort-Object Name -Descending | ' +
+            '            Select-Object -Skip ' + keepCount + '; ' +
+            '    foreach ($d in $dirs) { ' +
+            '      Remove-Item $d.FullName -Recurse -Force ' +
+            '    } ' +
+            '  }' +
+            '}"',
         returnStdout: true
     )
 
@@ -285,17 +289,14 @@ pipeline {
                         hotupdateVersion = versionManifest?.version?.toString() ?: "x.x.x.x"
                     }
 
-                    def PUBLISH_ROOT = "publish"
-                    def apkRelativePath = "${PUBLISH_ROOT}\\android\\${channel}\\${envName}\\${apkName}"
-                    def webRelativePath = "${PUBLISH_ROOT}\\web\\${channel}\\${envName}\\index.html"
-
+                    def publishRoot = "${env.WORKSPACE}\\..\\..\\publish"
                     def artifact = [:]
 
                     if (platform == 'android') {
                         def apkName = "Game_${channel}_${envName}_v${env.ANDROID_VERSION_CODE}.apk"
-                        def apkPath = "${env.WORKSPACE}\\build\\android\\${channel}\\${envName}\\${apkName}"
+                        def apkRelativePath = "${publishRoot}\\${platform}\\${channel}\\${envName}\\${apkName}"
 
-                        def sizeInfo = resolveApkSize(apkPath)
+                        def sizeInfo = resolveApkSize(apkRelativePath)
                         def APK_SIZE_MB = sizeInfo.mb
 
                         artifact = [
@@ -312,6 +313,7 @@ pipeline {
                     }
 
                     if (platform == 'web') {
+                        def webRelativePath = "${publishRoot}\\${platform}\\${channel}\\${envName}\\index.html".toString()
                         artifact = [
                             time     : time,
                             author   : author,

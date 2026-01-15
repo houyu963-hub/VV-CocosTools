@@ -271,23 +271,6 @@
 
     <h1>📦 构建产物列表</h1>
 
-    <script>
-        function toggleExtra(btn) {
-            const extra = btn.closest('.item').querySelector('.item-extra');
-            const show = extra.style.display === 'block';
-            extra.style.display = show ? 'none' : 'block';
-            btn.innerText = show ? '详情' : '收起';
-        }
-
-        function toggleHistory(btn) {
-            const items = btn.parentElement.querySelectorAll('.item');
-            for (let i = 1; i < items.length; i++) {
-                items[i].style.display = items[i].style.display === 'none' ? 'block' : 'none';
-            }
-            btn.innerText = btn.innerText.includes('最近') ? '收起历史' : '最近 10 个';
-        }
-    </script>
-
 </body>
 
 </html>
