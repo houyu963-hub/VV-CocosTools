@@ -1,0 +1,41 @@
+@Library('jenkins-shared-cocos') _
+
+cocosPipeline { }
+
+pipeline {
+  parameters {
+    string(name: 'GIT_REF', defaultValue:'main')
+    choice(name: 'CHANNEL', choices: ['official','xiaomi'])
+    choice(name: 'ENV', choices: ['dev','prod'])
+    choice(name: 'MODE', choices: ['release','debug'])
+    choice(name: 'VERSION_NAME', defaultValue: '')
+    choice(name: 'VERSION_CODE', defaultValue: '')
+    booleanParam(name: 'APK', defaultValue: false)
+    booleanParam(name: 'CLEAN', defaultValue: false)
+  }
+
+  stages {
+    stage('Build') {
+      steps {
+        bat "call tools\\build.bat android ^
+        ${params.CHANNEL} ^
+        ${params.ENV} ^
+        ${params.MODE} ^
+        ${env.CREATOR_PATH} ^
+        ${params.APK ? "true" : "false"} ^
+        ${params.CLEAN ? "true" : "false"}"
+      }
+    }
+
+    stage('Android') {
+      steps { androidBuild(this) }
+    }
+
+    stage('Publish') {
+      steps {
+        publishArtifacts(this)
+        updateManifest(this)
+      }
+    }
+  }
+}

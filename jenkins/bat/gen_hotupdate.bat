@@ -18,12 +18,10 @@ REM 版本号
 set version=%2
 REM 热更新地址
 set hotupdateUrl=%3
-REM 是否使用小包体 使用的话就只会放入引擎相关的资源
-set miniApk=%4
-REM 构建类型 0只需生成manifest 1生成manifest和bundle
-set buildType=%5
+REM 构建类型
+set apk=%4
 REM 产物保存目录
-set saveAartifactsDir=%6
+set saveAartifactsDir=%5
 
 REM ===============================
 REM 热更新参数
@@ -33,8 +31,7 @@ echo =========== Hotupdate Building ===========
 echo   bundleName  :%bundleName%
 echo   version     :%version%
 echo   hotupdateUrl:%hotupdateUrl%
-echo   miniApk     :%miniApk%
-echo   buildType     :%buildType%
+echo   apk         :%apk%
 echo   saveAartifactsDir:%saveAartifactsDir%
 echo =========== Hotupdate Building ===========
 echo.
@@ -47,18 +44,13 @@ set assetsRootPath=%projectPath%\build\android\data\assets\
 
 REM 哪些bundle需要放进manifest中
 if "%bundleName%"=="hall" (
-    if "%miniApk%"=="true" (
-        set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main"
-    ) else (
-        set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main","assets\common","assets\loading","assets\hall","assets\mahjong"
-    )
+    set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main"
+    REM 如果需要放入其他bundle 可以自行修改
+    REM set resourceFolder="src","jsb-adapter","assets\internal","assets\resources","assets\main","assets\common","assets\loading","assets\hall","assets\mahjong"
 ) else (
     set resourceFolder=["%bundleName%"]
 )
-if errorlevel 1 (
-    echo ❌ 错误: 选择资源失败
-    exit /b 1
-)
+
 set UPDATE_URL=%hotupdateUrl%\%bundleName%\
 set ASSETSROOT_PATH=%assetsRootPath%
 set RESOURCE_FOLDER=%resourceFolder%
@@ -94,7 +86,7 @@ if errorlevel 1 (
     echo ❌ 错误: 移动产物 manifest 文件到保存目录失败
     exit /b 1
 )
-if "%buildType%"=="1" (
+if "%apk%"=="true" (
     echo ✅ 移动 manifest 文件到 %saveAartifactsDir% 完成
     exit /b 0
 )
@@ -121,7 +113,7 @@ exit /b 0
 :usage
 echo.
 echo 用法:
-echo   gen_hotupdate.bat ^<bundleName^> ^<version^> ^<hotupdateUrl^> ^<miniApk^> ^<buildType^> ^<saveAartifactsDir^>
+echo   gen_hotupdate.bat ^<bundleName^> ^<version^> ^<hotupdateUrl^> ^<apk^> ^<saveAartifactsDir^>
 echo.
 echo 示例:
 echo   build.bat hall 0.0.1 dev https://test.cdn.xxx.com/xiaomi true 0 D:\project\game\hotupdate\

@@ -4,7 +4,7 @@ pipeline {
   agent { label 'cocos-windows-agent' }
 
   parameters {
-    choice(name: 'PLATFORM', choices: ['web','android'])
+    string(name: 'GIT_REF', defaultValue:'main')
     choice(name: 'CHANNEL', choices: ['official','xiaomi'])
     choice(name: 'ENV', choices: ['dev','prod'])
     choice(name: 'MODE', choices: ['release','debug'])
@@ -17,13 +17,12 @@ pipeline {
 
     stage('Build') {
       steps {
-        bat "call tools\\build.bat ${params.PLATFORM} ${params.CHANNEL} ${params.ENV}"
+        bat "call tools\\build.bat android ^
+        ${params.CHANNEL} ^
+        ${params.ENV} ^
+        ${params.MODE} ^
+        ${env.CREATOR_PATH}"
       }
-    }
-
-    stage('Android') {
-      when { expression { params.PLATFORM == 'android' } }
-      steps { androidBuild(this) }
     }
 
     stage('Publish') {

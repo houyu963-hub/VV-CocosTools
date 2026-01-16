@@ -13,18 +13,14 @@ if "%2"=="" goto usage
 if "%3"=="" goto usage
 if "%4"=="" goto usage
 if "%5"=="" goto usage
-if "%6"=="" goto usage
-if "%7"=="" goto usage
-if "%8"=="" goto usage
 
 set PLATFORM=%1
 set CHANNEL=%2
 set ENV=%3
 set MODE=%4
 set CREATOR=%5
-set CLEAN=%6
-set MINI_APK=%7
-set BUILD_TYPE=%8
+set APK=%6
+set CLEAN=%7
 
 REM ===============================
 REM 环境名归一化
@@ -36,10 +32,8 @@ if "%MODE%"=="debug" set MODE=debug
 if "%MODE%"=="release" set MODE=release
 if "%CLEAN%"=="true" set CLEAN=true
 if "%CLEAN%"=="false" set CLEAN=false
-if "%MINI_APK%"=="true" set MINI_APK=true
-if "%MINI_APK%"=="false" set MINI_APK=false
-if "%BUILD_TYPE%"=="hotupdate" set BUILD_TYPE=hotupdate
-if "%BUILD_TYPE%"=="generateApk" set BUILD_TYPE=generateApk
+if "%APK%"=="true" set APK=true
+if "%APK%"=="false" set APK=false
 
 REM ===============================
 REM 渠道配置文件
@@ -96,7 +90,7 @@ if "%PLATFORM%"=="ios" (
 )
 
 REM ===============================
-REM 热更新流程（必须双构建）
+REM 生成 apk 流程（必须双构建）
 REM ===============================
 
 REM 1. 第一次构建（生成最新资源）
@@ -144,13 +138,13 @@ if "%HOTUPDATE_URL%"=="" (
 
 REM 4. 生成热更新 manifest
 set SAVEA_ARTIFACTS_DIR = 
-if "%BUILD_TYPE%"=="hotupdate" (
+if "%APK%"=="false" (
   set PUBLISH_ROOT = \..\..\publish
   set SAVEA_ARTIFACTS_DIR=PUBLISH_ROOT\hotupdate\%PLATFORM%\%CHANNEL%\%ENV%\%bundleName%\
-) else if "%BUILD_TYPE%"=="generateApk" (
+) else if "%APK%"=="true" (
   set SAVEA_ARTIFACTS_DIR=.\assets\resources\manifest\hall\
 )
-call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %MINI_APK% %BUILD_TYPE% %SAVEA_ARTIFACTS_DIR%
+call tools\gen_hotupdate.bat hall %LAST_VERSION% %HOTUPDATE_URL% %APK% %SAVEA_ARTIFACTS_DIR%
 
 if errorlevel 1 (
   echo ❌ 错误: 生成热更新 manifest 失败
@@ -158,7 +152,7 @@ if errorlevel 1 (
 )
 
 REM 只是热更新的文件 就不需要第二次构建
-if "%BUILD_TYPE%"=="hotupdate" (
+if "%APK%"=="false" (
   echo ✅ 生成 %bundleName% 热更新文件完成
   exit /b 0
 )
@@ -196,7 +190,7 @@ exit /b 0
 :usage
 echo.
 echo 用法:
-echo   build.bat ^<platform^> ^<channel^> ^<env^> ^<mode^> ^<creator^> ^<clean^> ^<mini_apk^>
+echo   build.bat ^<platform^> ^<channel^> ^<env^> ^<mode^> ^<creator^> ^<apk^> ^<clean^>
 echo.
 echo 示例:
 echo   build.bat android xiaomi dev debug CocosCreator.exe true true

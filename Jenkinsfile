@@ -155,18 +155,6 @@ pipeline {
     }
 
     stages {
-        stage('参数验证') {
-            steps {
-                script {
-                    if (params.PLATFORM == 'web') {
-                        if (params.CHANNEL != 'official') {
-                            error "Web平台只支持official渠道"
-                        }
-                    }
-                }
-            }
-        }
-
         stage('拉代码') {
             steps {
                 checkout([
