@@ -1,5 +1,7 @@
 @Library('jenkins-shared-cocos') _
 
+cocosPipeline { }
+
 pipeline {
   agent { label 'cocos-windows-agent' }
 
@@ -11,13 +13,9 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps { checkout scm }
-    }
-
     stage('Build') {
       steps {
-        bat "call tools\\build.bat android ^
+        bat "call tools\\build.bat web ^
         ${params.CHANNEL} ^
         ${params.ENV} ^
         ${params.MODE} ^
