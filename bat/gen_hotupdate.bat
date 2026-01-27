@@ -1,7 +1,12 @@
 @echo off
 
 REM ===============================
+REM 用法
+REM gen_hotupdate.bat bundleName version hotupdateUrl apk saveAartifactsDir
 REM 参数说明
+REM bundle名字 版本号 热更新地址 生成apk 产物保存目录
+REM 示例
+REM gen_hotupdate.bat hall 0.0.1 https://test.cdn.xxx.com/xiaomi true D:\project\game\hotupdate\
 REM ===============================
 
 if "%1"=="" goto usage
@@ -9,7 +14,6 @@ if "%2"=="" goto usage
 if "%3"=="" goto usage
 if "%4"=="" goto usage
 if "%5"=="" goto usage
-if "%6"=="" goto usage
 
 REM bundle name
 set bundleName=%1
@@ -116,5 +120,5 @@ echo Usage:
 echo   gen_hotupdate.bat ^<bundleName^> ^<version^> ^<hotupdateUrl^> ^<apk^> ^<saveAartifactsDir^>
 echo.
 echo Example:
-echo   build.bat hall 0.0.1 dev https://test.cdn.xxx.com/xiaomi true 0 D:\project\game\hotupdate\
+echo   gen_hotupdate.bat hall 0.0.1 https://test.cdn.xxx.com/xiaomi true D:\project\game\hotupdate\
 exit /b 1

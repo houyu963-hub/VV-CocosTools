@@ -2,9 +2,13 @@
 setlocal enabledelayedexpansion
 
 REM ===============================
+REM 用法
+REM build.bat platform channel env mode creator apk clean
 REM 参数说明
+REM 平台 渠道 环境 模式 创建者 生成apk 是否清理
+REM 示例
 REM build.bat android xiaomi dev debug CocosCreator.exe true true
-REM build.bat web official test debug CocosCreator.exe true true
+REM build.bat web official test debug CocosCreator.exe false true
 REM ===============================
 
 REM 当前目录
@@ -137,10 +141,10 @@ if "%hotupdate_url%"=="" (
 )
 
 REM 4. 生成热更新 manifest
-set savea_artifacts_dir = 
+set savea_artifacts_dir =
 if "%apk%"=="false" (
-  set publish_root = \..\..\publish
-  set savea_artifacts_dir=publish_root\hotupdate\%platform%\%channel%\%env%\%bundleName%\
+  set artifacts_root = \..\..\artifacts
+  set savea_artifacts_dir=%artifacts_root%\hotupdate\%platform%\%channel%\%env%\%bundleName%\
 ) else if "%apk%"=="true" (
   set savea_artifacts_dir=.\assets\resources\manifest\hall\
 )
