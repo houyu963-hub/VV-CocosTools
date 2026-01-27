@@ -99,16 +99,16 @@ echo.
 REM 选择构建参数
 set build_args=
 if "%platform%"=="web" (
-  set build_args=platform=web;configPath=build-config/web/buildConfig_web-mobile.json
+  set build_args=platform=web-mobile;configPath=build-config/web/buildConfig_web-mobile.json
 )
 if "%platform%"=="android" (
-  set build_args=platform=android;configPath=build-config/android/buildConfig_android-mobile.json
+  set build_args=platform=android;configPath=build-config/android/buildConfig_android.json
 )
 if "%platform%"=="ios" ( 
-  set build_args=platform=ios;configPath=build-config/ios/buildConfig_ios-mobile.json
+  set build_args=platform=ios;configPath=build-config/ios/buildConfig_ios.json
 )
 if "%platform%"=="mini" (
-  set build_args=platform=mini;configPath=build-config/mini/buildConfig_mini-mobile.json
+  set build_args=platform=mini;configPath=build-config/mini/buildConfig_mini.json
 )
 
 REM 生成 apk 流程（必须双构建）
