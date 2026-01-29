@@ -63,7 +63,7 @@ set "UPDATE_URL=%UPDATE_URL:\=/%"
 set "ASSETSROOT_PATH=%ASSETSROOT_PATH:\=/%"
 set "RESOURCE_FOLDER=%RESOURCE_FOLDER:\=/%"
 
-node ../js/gen_manifest.js ^
+node ..\js\gen_manifest.js ^
   -v "%version%" ^
   -u "%UPDATE_URL%" ^
   -s "%ASSETSROOT_PATH%" ^
@@ -71,6 +71,7 @@ node ../js/gen_manifest.js ^
   -i "%RESOURCE_FOLDER%"
 
 if errorlevel 1 (
+    echo ❌ Error: Failed to generate manifest1
     exit /b 1
 )
 echo ✅ Generated %bundleName% manifest completed
