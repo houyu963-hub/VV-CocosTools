@@ -63,7 +63,7 @@ set "UPDATE_URL=%UPDATE_URL:\=/%"
 set "ASSETSROOT_PATH=%ASSETSROOT_PATH:\=/%"
 set "RESOURCE_FOLDER=%RESOURCE_FOLDER:\=/%"
 
-node jenkins-shared-cocos\src\org\cocos\js\gen_manifest.js ^
+node ../js/gen_manifest.js ^
   -v "%version%" ^
   -u "%UPDATE_URL%" ^
   -s "%ASSETSROOT_PATH%" ^
