@@ -14,7 +14,7 @@ REM ===============================
 REM 当前目录
 echo -------------------------------------------------------------------
 set current_dir=%cd%
-echo %current_dir%
+echo current_dir: %current_dir%
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
@@ -164,7 +164,7 @@ if "%apk%"=="false" (
 ) else if "%apk%"=="true" (
   set savea_artifacts_dir=.\assets\resources\manifest\hall\
 )
-call gen_hotupdate.bat hall %last_version% %hotupdate_url% %apk% %savea_artifacts_dir%
+call tools\bat\gen_hotupdate.bat hall %last_version% %hotupdate_url% %apk% %savea_artifacts_dir%
 
 if errorlevel 1 (
   echo ❌ Error: Failed to generate hot update manifest
