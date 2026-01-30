@@ -9,6 +9,12 @@ REM 示例
 REM gen_hotupdate.bat hall 0.0.1 https://test.cdn.xxx.com/xiaomi true D:\project\game\hotupdate\
 REM ===============================
 
+REM 当前目录
+echo -------------------------------------------------------------------
+set current_dir=%cd%
+echo current_dir: %current_dir%
+set js_root=tools/js
+
 if "%1"=="" goto usage
 if "%2"=="" goto usage
 if "%3"=="" goto usage
@@ -63,7 +69,7 @@ set "UPDATE_URL=%UPDATE_URL:\=/%"
 set "ASSETSROOT_PATH=%ASSETSROOT_PATH:\=/%"
 set "RESOURCE_FOLDER=%RESOURCE_FOLDER:\=/%"
 
-node ..\js\gen_manifest.js ^
+node %js_root%/gen_manifest.js ^
   -v "%version%" ^
   -u "%UPDATE_URL%" ^
   -s "%ASSETSROOT_PATH%" ^
@@ -71,7 +77,7 @@ node ..\js\gen_manifest.js ^
   -i "%RESOURCE_FOLDER%"
 
 if errorlevel 1 (
-    echo ❌ Error: Failed to generate manifest1
+    echo ❌ Error: Failed to execute gen_manifest.js
     exit /b 1
 )
 echo ✅ Generated %bundleName% manifest completed

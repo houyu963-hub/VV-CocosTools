@@ -15,6 +15,7 @@ REM 当前目录
 echo -------------------------------------------------------------------
 set current_dir=%cd%
 echo current_dir: %current_dir%
+set js_root=tools/js
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
@@ -29,6 +30,7 @@ set mode=%4
 set creator=%5
 set apk=%6
 set clean=%7
+set bundle=%8
 
 REM ===============================
 REM 环境名归一化
@@ -52,8 +54,6 @@ if "%env%"=="prod" set CONFIG_NAME=prod.json
 
 set channel_config=build-config\%platform%\%channel%\%CONFIG_NAME%
 set channel_ts=assets\frame\config\ChannelConfig.ts
-
-set js_root=tools/js
 
 if not exist "%channel_config%" (
   echo ❌ Error: Channel config not found: %channel_config%
@@ -160,11 +160,11 @@ REM 4. 生成热更新 manifest
 set savea_artifacts_dir =
 if "%apk%"=="false" (
   set artifacts_root = \..\..\artifacts
-  set savea_artifacts_dir=%artifacts_root%\hotupdate\%platform%\%channel%\%env%\%bundleName%\
+  set savea_artifacts_dir=%artifacts_root%\hotupdate\%platform%\%channel%\%env%\%bundle%\
 ) else if "%apk%"=="true" (
   set savea_artifacts_dir=.\assets\resources\manifest\hall\
 )
-call tools\bat\gen_hotupdate.bat hall %last_version% %hotupdate_url% %apk% %savea_artifacts_dir%
+call tools\bat\gen_hotupdate.bat %bundle% %last_version% %hotupdate_url% %apk% %savea_artifacts_dir%
 
 if errorlevel 1 (
   echo ❌ Error: Failed to generate hot update manifest
@@ -173,7 +173,7 @@ if errorlevel 1 (
 
 REM 只是热更新的文件 就不需要第二次构建
 if "%apk%"=="false" (
-  echo ✅ Generation of %bundleName% hot update files completed
+  echo ✅ Generation of %bundle% hot update files completed
   exit /b 0
 )
 
